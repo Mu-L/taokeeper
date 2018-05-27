@@ -68,138 +68,137 @@ public class ZKServerPerformanceCollector implements Runnable {
 	 */
 	public void sendAlarm( AlarmSettings alarmSettings, HostPerformanceEntity hostPerformanceEntity, String clusterName ) {
 
-		if ( null == alarmSettings )
-			return;
+        if (null == alarmSettings)
+            return;
 
-		String wangwangList = alarmSettings.getWangwangList();
-		String phoneList = alarmSettings.getPhoneList();
+        String wangwangList = alarmSettings.getWangwangList();
+        String phoneList = alarmSettings.getPhoneList();
 
-		String maxCpuUsage = alarmSettings.getMaxCpuUsage();
-		String maxMemoryUsage = alarmSettings.getMaxMemoryUsage();
-		String maxLoad = alarmSettings.getMaxLoad();
+        String maxCpuUsage = alarmSettings.getMaxCpuUsage();
+        String maxMemoryUsage = alarmSettings.getMaxMemoryUsage();
+        String maxLoad = alarmSettings.getMaxLoad();
 
-		String dataDir = alarmSettings.getDataDir();
-		String dataLogDir = alarmSettings.getDataLogDir();
-		String maxDiskUsage = alarmSettings.getMaxDiskUsage();
+        String dataDir = alarmSettings.getDataDir();
+        String dataLogDir = alarmSettings.getDataLogDir();
+        String maxDiskUsage = alarmSettings.getMaxDiskUsage();
 
-		if ( !StringUtil.isBlank( maxCpuUsage ) ) { // Cpu usage alarm
-			String cpuUsage = hostPerformanceEntity.getCpuUsage();
-			if ( !StringUtil.isBlank( cpuUsage ) && cpuUsage.endsWith( "%" ) ) {
-				cpuUsage = cpuUsage.replaceAll( "%", "" );
-				double difference = Double.parseDouble( cpuUsage ) - Double.parseDouble( maxCpuUsage );
-				if ( 0 < difference ) {
-					LOG.warn( "ZK Server " + hostPerformanceEntity.getIp() + " cpu Usage too high：" + cpuUsage + "-" + maxCpuUsage + "=" + difference );
-					// Alarm
-					if ( GlobalInstance.needAlarm.get() ) {
-						ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( 
-								new Message( wangwangList, "ZK Server cpu usage too high-" + clusterName, hostPerformanceEntity.getIp() + " cpu usage too high! " + cpuUsage + "-" + maxCpuUsage + "=" + difference,
-								Message.MessageType.WANGWANG ),
-								new Message( phoneList, "ZK Server cpu usage too high-" + clusterName, "ZK Server cpu usage too high-" + clusterName + hostPerformanceEntity.getIp() + " cpu usage too high! " + cpuUsage + "-"
-										+ maxCpuUsage + "=" + difference, Message.MessageType.SMS )
-								) );
-						LOG.info( "WangWangList: " + wangwangList );
-					}
+        if (!StringUtil.isBlank(maxCpuUsage)) { // Cpu usage alarm
+            String cpuUsage = hostPerformanceEntity.getCpuUsage();
+            if (!StringUtil.isBlank(cpuUsage) && cpuUsage.endsWith("%")) {
+                cpuUsage = cpuUsage.replaceAll("%", "");
+                double difference = Double.parseDouble(cpuUsage) - Double.parseDouble(maxCpuUsage);
+                if (0 < difference) {
+                    LOG.warn("ZK Server " + hostPerformanceEntity.getIp() + " cpu Usage too high：" + cpuUsage + "-" + maxCpuUsage + "=" + difference);
+                    // Alarm
+//					if ( GlobalInstance.needAlarm.get() ) {
+//						ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender(
+//								new Message( wangwangList, "ZK Server cpu usage too high-" + clusterName, hostPerformanceEntity.getIp() + " cpu usage too high! " + cpuUsage + "-" + maxCpuUsage + "=" + difference,
+//								Message.MessageType.WANGWANG ),
+//								new Message( phoneList, "ZK Server cpu usage too high-" + clusterName, "ZK Server cpu usage too high-" + clusterName + hostPerformanceEntity.getIp() + " cpu usage too high! " + cpuUsage + "-"
+//										+ maxCpuUsage + "=" + difference, Message.MessageType.SMS )
+//								) );
+//						LOG.info( "WangWangList: " + wangwangList );
+//					}
+                }
+            }
+        }
+
+        if (!StringUtil.isBlank(maxMemoryUsage)) { // Memory usage alarm
+            String memoryUsage = hostPerformanceEntity.getMemoryUsage();
+            if (!StringUtil.isBlank(memoryUsage) && memoryUsage.endsWith("%")) {
+                memoryUsage = memoryUsage.replaceAll("%", "");
+                double difference = Double.parseDouble(memoryUsage) - Double.parseDouble(maxMemoryUsage);
+                if (0 < difference) {
+                    LOG.warn("ZK Server " + hostPerformanceEntity.getIp() + " memory usage too high: " + memoryUsage + "-" + maxMemoryUsage + "=" + difference);
+                    // Alarm
+//					if ( GlobalInstance.needAlarm.get() ) {
+//						ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender(
+//
+//								new Message( wangwangList, "ZK Server memory usage too high:-" + clusterName, hostPerformanceEntity.getIp() + " memory too high：" + memoryUsage + "-" + maxMemoryUsage + "=" + difference,
+//								Message.MessageType.WANGWANG ),
+//
+//								new Message( phoneList, "", "ZK Server memory usage too high-" + clusterName + hostPerformanceEntity.getIp() + memoryUsage + "-" + maxMemoryUsage + "=" + difference, Message.MessageType.SMS )
+//
+//								) );
+//						LOG.info( "WangWangList: " + wangwangList );
+//					}
 				}
-			}
-		}
+                }
+            }
 
-		if ( !StringUtil.isBlank( maxMemoryUsage ) ) { // Memory usage alarm
-			String memoryUsage = hostPerformanceEntity.getMemoryUsage();
-			if ( !StringUtil.isBlank( memoryUsage ) && memoryUsage.endsWith( "%" ) ) {
-				memoryUsage = memoryUsage.replaceAll( "%", "" );
-				double difference = Double.parseDouble( memoryUsage ) - Double.parseDouble( maxMemoryUsage );
-				if ( 0 < difference ) {
-					LOG.warn( "ZK Server "+ hostPerformanceEntity.getIp() +" memory usage too high: " + memoryUsage + "-" + maxMemoryUsage + "=" + difference );
-					// Alarm
-					if ( GlobalInstance.needAlarm.get() ) {
-						ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( 
-								
-								new Message( wangwangList, "ZK Server memory usage too high:-" + clusterName, hostPerformanceEntity.getIp() + " memory too high：" + memoryUsage + "-" + maxMemoryUsage + "=" + difference,
-								Message.MessageType.WANGWANG ),
-								
-								new Message( phoneList, "", "ZK Server memory usage too high-" + clusterName + hostPerformanceEntity.getIp() + memoryUsage + "-" + maxMemoryUsage + "=" + difference, Message.MessageType.SMS )
-								
-								) );
-						LOG.info( "WangWangList: " + wangwangList );
-					}
-				}
-			}
-		}
+            if (!StringUtil.isBlank(maxLoad)) { // Load usage alarm
+                String load = hostPerformanceEntity.getLoad();
+                if (!StringUtil.isBlank(load)) {
+                    double difference = Double.parseDouble(load) - Double.parseDouble(maxLoad);
+                    if (0 < difference) {
+                        LOG.warn("ZK Server " + hostPerformanceEntity.getIp() + " load usage too high: " + load + "-" + maxLoad + "=" + difference);
+//					if ( GlobalInstance.needAlarm.get() ) {
+//
+//						ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender(
+//
+//								new Message( wangwangList, " ZK Server load usage too high-"
+//								+ clusterName, hostPerformanceEntity.getIp() + "：" + load + "-" + maxLoad + "=" + difference,
+//								Message.MessageType.WANGWANG ),
+//
+//								new Message( phoneList, "", "ZK Server load usage too high-" + clusterName + hostPerformanceEntity.getIp() + "：" + load + "-"
+//										+ maxLoad + "=" + difference, Message.MessageType.SMS )
+//
+//								) );
+//						LOG.info( "WangWangList: " + wangwangList );
+//					}
+                    }
+                }
+            }
 
-		if ( !StringUtil.isBlank( maxLoad ) ) { // Load usage alarm
-			String load = hostPerformanceEntity.getLoad();
-			if ( !StringUtil.isBlank( load ) ) {
-				double difference = Double.parseDouble( load ) - Double.parseDouble( maxLoad );
-				if ( 0 < difference ) {
-					LOG.warn( "ZK Server "+ hostPerformanceEntity.getIp() +" load usage too high: " + load + "-" + maxLoad + "=" + difference );
-					if ( GlobalInstance.needAlarm.get() ) {
-						
-						ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( 
-								
-								new Message( wangwangList, " ZK Server load usage too high-"
-								+ clusterName, hostPerformanceEntity.getIp() + "：" + load + "-" + maxLoad + "=" + difference,
-								Message.MessageType.WANGWANG ),
-								
-								new Message( phoneList, "", "ZK Server load usage too high-" + clusterName + hostPerformanceEntity.getIp() + "：" + load + "-"
-										+ maxLoad + "=" + difference, Message.MessageType.SMS )
-								
-								) );
-						LOG.info( "WangWangList: " + wangwangList );
-					}
-				}
-			}
-		}
+            try {
+                if (!StringUtil.isBlank(dataDir) || !StringUtil.isBlank(dataLogDir)) { // 需要进行
+                    // disk容量
+                    // 报警
 
-		try {
-			if ( !StringUtil.isBlank( dataDir ) || !StringUtil.isBlank( dataLogDir ) ) { // 需要进行
-																							// disk容量
-																							// 报警
+                    dataDir = StringUtil.trimToEmpty(dataDir);
+                    dataLogDir = StringUtil.trimToEmpty(dataLogDir);
 
-				dataDir = StringUtil.trimToEmpty( dataDir );
-				dataLogDir = StringUtil.trimToEmpty( dataLogDir );
+                    if (!StringUtil.isBlank(maxDiskUsage)) {
 
-				if ( !StringUtil.isBlank( maxDiskUsage ) ) {
+                        Map<String, String> diskUsageMap = hostPerformanceEntity.getDiskUsageMap();
+                        if (null != diskUsageMap) {
+                            for (String mountedOn : diskUsageMap.keySet()) {
 
-					Map< String, String > diskUsageMap = hostPerformanceEntity.getDiskUsageMap();
-					if ( null != diskUsageMap ) {
-						for ( String mountedOn : diskUsageMap.keySet() ) {
+                                if (StringUtil.trimToEmpty(mountedOn).equalsIgnoreCase(SLASH))
+                                    continue;
 
-							if ( StringUtil.trimToEmpty( mountedOn ).equalsIgnoreCase( SLASH ) )
-								continue;
+                                if (dataDir.startsWith(StringUtil.trimToEmpty(mountedOn))
+                                        || dataLogDir.startsWith(StringUtil.trimToEmpty(mountedOn))) {
+                                    int diskUsage = Integer.parseInt(StringUtil.trimToEmpty(diskUsageMap.get(mountedOn)).replace(PERCENT,
+                                            EMPTY_STRING));
+                                    if (diskUsage > Integer.parseInt(maxDiskUsage)) {
+                                        LOG.warn("ZK Server " + hostPerformanceEntity.getIp() + " disk usage too high, " + mountedOn + ": " + diskUsage
+                                                + "%, max setting usage is: " + maxDiskUsage + "%");
+//									if ( GlobalInstance.needAlarm.get() ) {
+//										ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender(
+//
+//												new Message( wangwangList,
+//												"ZK Server disk usage too high-" + clusterName, hostPerformanceEntity.getIp() + " disk usage too high, "
+//														+ mountedOn + ":" + diskUsage + "%, max setting usage is: " + maxDiskUsage + "%",
+//												Message.MessageType.WANGWANG ),
+//
+//												new Message( phoneList, "", "ZK disk usage too high-" + clusterName
+//														+ hostPerformanceEntity.getIp() + "," + mountedOn + ": " + diskUsage
+//														+ "%, max setting usage is: " + maxDiskUsage + "%", Message.MessageType.SMS )
+//												) );
+//										LOG.info( "WangWangList: " + wangwangList );
+//									}
+                                    }
+                                }
+                            }
+                        }
+                    }
 
-							if ( dataDir.startsWith( StringUtil.trimToEmpty( mountedOn ) )
-									|| dataLogDir.startsWith( StringUtil.trimToEmpty( mountedOn ) ) ) {
-								int diskUsage = Integer.parseInt( StringUtil.trimToEmpty( diskUsageMap.get( mountedOn ) ).replace( PERCENT,
-										EMPTY_STRING ) );
-								if ( diskUsage > Integer.parseInt( maxDiskUsage ) ) {
-									LOG.warn( "ZK Server " + hostPerformanceEntity.getIp() + " disk usage too high, " + mountedOn + ": " + diskUsage
-											+ "%, max setting usage is: " + maxDiskUsage + "%" );
-									if ( GlobalInstance.needAlarm.get() ) {
-										ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( 
-												
-												new Message( wangwangList,
-												"ZK Server disk usage too high-" + clusterName, hostPerformanceEntity.getIp() + " disk usage too high, "
-														+ mountedOn + ":" + diskUsage + "%, max setting usage is: " + maxDiskUsage + "%",
-												Message.MessageType.WANGWANG ),
-										
-												new Message( phoneList, "", "ZK disk usage too high-" + clusterName
-														+ hostPerformanceEntity.getIp() + "," + mountedOn + ": " + diskUsage
-														+ "%, max setting usage is: " + maxDiskUsage + "%", Message.MessageType.SMS )
-												) );
-										LOG.info( "WangWangList: " + wangwangList );
-									}
-								}
-							}
-						}
-					}
-				}
+                }
+            } catch (Throwable e) {
+                LOG.error("Error when ckeck disk usage：" + e.getMessage());
+                e.printStackTrace();
+            }// disk alarm
 
-			}
-		} catch ( Throwable e ) {
-			LOG.error( "Error when ckeck disk usage：" + e.getMessage() );
-			e.printStackTrace();
-		}// disk alarm
-
-	}
-
-}
+        }
+    }

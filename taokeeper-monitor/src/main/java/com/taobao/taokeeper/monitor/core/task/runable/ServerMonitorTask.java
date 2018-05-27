@@ -6,9 +6,6 @@ import com.taobao.taokeeper.common.GlobalInstance;
 import com.taobao.taokeeper.common.constant.SystemConstant;
 import com.taobao.taokeeper.dao.ReportDAO;
 import com.taobao.taokeeper.model.*;
-import com.taobao.taokeeper.model.type.Message;
-import com.taobao.taokeeper.monitor.core.ThreadPoolManager;
-import com.taobao.taokeeper.reporter.alarm.TbMessageSender;
 import common.toolkit.entity.DateFormat;
 import common.toolkit.entity.io.Connection;
 import common.toolkit.entity.io.SSHResource;
@@ -38,14 +35,14 @@ import static common.toolkit.constant.HtmlTagConstant.BR;
 
 
 /**
- * Description: 采集zooKeeper上的状态信息
+ * Description: Monitor task for a server include:
  *
- * @author 银时 yinshi.nc@taobao.com
- * @Date Dec 26, 2011
+ * @author 银时(nileader) yinshi.nc@taobao.com
+ * @Date Dec 26, 2019
  */
-public class ZKServerStatusCollector implements Runnable {
+public class ServerMonitorTask implements Runnable {
 
-    private static final Logger LOG = LoggerFactory.getLogger( ZKServerStatusCollector.class );
+    private static final Logger LOG = LoggerFactory.getLogger( ServerMonitorTask.class );
 
     private static final String MODE_FOLLOWER = "Mode: follower";
     private static final String MODE_LEADERER = "Mode: leader";
@@ -67,14 +64,14 @@ public class ZKServerStatusCollector implements Runnable {
     private ZooKeeperCluster zookeeperCluster;
     private boolean needStoreToDB;
 
-    public ZKServerStatusCollector( String ip, String port, AlarmSettings alarmSettings, ZooKeeperCluster zookeeperCluster ) {
+    public ServerMonitorTask(String ip, String port, AlarmSettings alarmSettings, ZooKeeperCluster zookeeperCluster ) {
         this.ip = ip;
         this.port = port;
         this.alarmSettings = alarmSettings;
         this.zookeeperCluster = zookeeperCluster;
         this.needStoreToDB = true;
     }
-    public ZKServerStatusCollector( String ip, String port, AlarmSettings alarmSettings, ZooKeeperCluster zookeeperCluster, boolean needStoreToDB ) {
+    public ServerMonitorTask(String ip, String port, AlarmSettings alarmSettings, ZooKeeperCluster zookeeperCluster, boolean needStoreToDB ) {
         this.ip = ip;
         this.port = port;
         this.alarmSettings = alarmSettings;
@@ -90,12 +87,13 @@ public class ZKServerStatusCollector implements Runnable {
                 return;
             }
             ZooKeeperStatusV2 zooKeeperStatus = new ZooKeeperStatusV2();
-            sshZooKeeperAndHandleStat( ip, Integer.parseInt( port ), zooKeeperStatus );
+
+            handleStat( ip, Integer.parseInt( port ), zooKeeperStatus );
             telnetZooKeeperAndHandleWchs( ip, Integer.parseInt( port ), zooKeeperStatus );
             sshZooKeeperAndHandleWchc( ip, Integer.parseInt( port ), zooKeeperStatus, zookeeperCluster.getClusterId() );
             sshZooKeeperAndHandleRwps( ip, Integer.parseInt( port ), (ZooKeeperStatusV2)zooKeeperStatus, zookeeperCluster.getClusterId() );
             checkAndAlarm( alarmSettings, zooKeeperStatus, zookeeperCluster.getClusterName() );
-            GlobalInstance.putZooKeeperStatus( ip, zooKeeperStatus );
+            GlobalInstance.putZooKeeperStatus( ip+":"+port, zooKeeperStatus );
             //Store taokeeper stat to DB
             if( needStoreToDB ){
                 storeTaoKeeperStatToDB( zookeeperCluster.getClusterId(), (ZooKeeperStatusV2)zooKeeperStatus );
@@ -109,9 +107,9 @@ public class ZKServerStatusCollector implements Runnable {
     }
 
     /**
-     * 进行Telnet连接并进行返回处理,执行 stat命令
+     * Exec 4 words command: stat
      */
-    private void sshZooKeeperAndHandleStat( String ip, int port, ZooKeeperStatus zooKeeperStatus ) {
+    private void handleStat(String ip, int port, ZooKeeperStatus zooKeeperStatus ) {
 
         BufferedReader bufferedRead = null;
         StringBuffer sb = new StringBuffer();
@@ -482,8 +480,8 @@ public class ZKServerStatusCollector implements Runnable {
                     String wangwangList = alarmSettings.getWangwangList();
                     String phoneList = alarmSettings.getPhoneList();
 
-                    ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( wangwangList, "ZooKeeper连接数，Watcher数报警-" + clusterName, clusterName + "-" + sb.toString(), Message.MessageType.WANGWANG ) ) );
-                    ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( phoneList, "ZooKeeper连接数，Watcher数报警-" + clusterName, clusterName + "-" + sb.toString(), Message.MessageType.WANGWANG ) ) );
+                    //ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( wangwangList, "ZooKeeper连接数，Watcher数报警-" + clusterName, clusterName + "-" + sb.toString(), Message.MessageType.WANGWANG ) ) );
+                    //ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( phoneList, "ZooKeeper连接数，Watcher数报警-" + clusterName, clusterName + "-" + sb.toString(), Message.MessageType.WANGWANG ) ) );
                 }
             }// need alarm
         } catch ( NumberFormatException e ) {

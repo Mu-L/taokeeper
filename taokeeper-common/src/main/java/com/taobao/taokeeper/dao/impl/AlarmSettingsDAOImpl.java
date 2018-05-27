@@ -12,12 +12,14 @@ import common.toolkit.entity.db.DBConnectionResource;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.db.DbcpUtil;
+import org.springframework.stereotype.Repository;
 
 /**
  * Description: Access DB for alarm settings
  * @author   yinshi.nc
  * @Date	 2011-10-28
  */
+@Repository
 public class AlarmSettingsDAOImpl implements AlarmSettingsDAO{
 	
 	public AlarmSettings getAlarmSettingsByCulsterId( int clusterId )throws DaoException{

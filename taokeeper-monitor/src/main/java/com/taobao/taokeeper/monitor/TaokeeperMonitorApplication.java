@@ -8,6 +8,7 @@ import com.taobao.taokeeper.model.TaoKeeperSettings;
 import com.taobao.taokeeper.model.type.Message;
 import com.taobao.taokeeper.monitor.core.Initialization;
 import com.taobao.taokeeper.monitor.core.ThreadPoolManager;
+import com.taobao.taokeeper.monitor.core.task.runable.ClusterConfigLoader;
 import com.taobao.taokeeper.reporter.alarm.TbMessageSender;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.ObjectUtil;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -38,11 +40,24 @@ import java.util.Properties;
 public class TaokeeperMonitorApplication {
     private static final Logger LOG = LoggerFactory.getLogger( TaokeeperMonitorApplication.class );
 
+    private static ApplicationContext staticApplicationContext;
+    private static ThreadPoolManager staticThreadPoolManager;
+
+    @Autowired
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        staticApplicationContext = applicationContext;
+    }
+
+    @Autowired
+    public void setThreadPoolManager(ThreadPoolManager threadPoolManager) {
+        staticThreadPoolManager = threadPoolManager;
+    }
+
+
     public static void main(String[] args) {
 
-        initSystem();
-
         SpringApplication.run(TaokeeperMonitorApplication.class, args);
+        initSystem();
     }
 
 
@@ -82,26 +97,12 @@ public class TaokeeperMonitorApplication {
 
 
         LOG.info( "=================================Finish init system===========================" );
-        ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( "银时", "TaoKeeper启动", "TaoKeeper启动",
-                Message.MessageType.WANGWANG ) ) );
-    }
+//        ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( "银时", "TaoKeeper启动", "TaoKeeper启动",
+//                Message.MessageType.WANGWANG ) ) );
 
-    @Component
-    public static class SettingsInitializer {
 
-        @Autowired
-        private SettingsDAO taoKeeperSettingsDAO;
+        ClusterConfigLoader newLoader = staticApplicationContext.getBean(ClusterConfigLoader.class);
+        staticThreadPoolManager.addJobToZKClusterDumperExecutor(newLoader);
 
-        @EventListener(ApplicationReadyEvent.class)
-        public void loadSettings() {
-            TaoKeeperSettings taoKeeperSettings = null;
-            try {
-                taoKeeperSettings = taoKeeperSettingsDAO.getTaoKeeperSettingsBySettingsId(1);
-            } catch (DaoException e) {
-                LOG.error(e.getMessage(),e);
-            }
-            if (null != taoKeeperSettings)
-                GlobalInstance.taoKeeperSettings = taoKeeperSettings;
-        }
     }
 }

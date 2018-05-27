@@ -16,7 +16,7 @@ import common.toolkit.util.number.RandomUtil;
 
 /**
  * 类说明: List相关工具类
- * @author 银时 yinshi.nc@taobao.com
+ * @author 银时(nileader) yinshi.nc@taobao.com
  */
 public class ListUtil {
 

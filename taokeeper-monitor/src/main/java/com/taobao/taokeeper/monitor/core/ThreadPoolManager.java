@@ -3,6 +3,7 @@ package com.taobao.taokeeper.monitor.core;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.taobao.taokeeper.monitor.core.task.runable.ClusterConfigLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +13,10 @@ import org.slf4j.LoggerFactory;
  * @author 银时 yinshi.nc@taobao.com
  * @Date Dec 25, 2011
  */
+import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
+
+@Component
 public class ThreadPoolManager {
 
 	private static Logger LOG = LoggerFactory.getLogger( ThreadPoolManager.class );
@@ -23,7 +28,7 @@ public class ThreadPoolManager {
 	private static int SIZE_OF_ZKCLUSTERCONFIG_DUMPER_EXECUTOR = 2;
 	
 	
-	public static void init(){
+	public void init(){
 		if( null == zooKeeperNodeAliveCheckExecutor ){
 			LOG.info( "Start init ThreadPoolManager..." );
 			zooKeeperNodeAliveCheckExecutor 	 = Executors.newFixedThreadPool( SIZE_OF_ZKNODEALIVECHECK_EXECUTOR );
@@ -37,22 +42,22 @@ public class ThreadPoolManager {
 	
 	
 	/** 节点自检 线程池 */
-	private static ExecutorService zooKeeperNodeAliveCheckExecutor;
-	public static void addJobToZooKeeperNodeAliveCheckExecutor( Runnable command ){
+	private ExecutorService zooKeeperNodeAliveCheckExecutor;
+	public void addJobToZooKeeperNodeAliveCheckExecutor( Runnable command ){
 		init();
 		zooKeeperNodeAliveCheckExecutor.execute( command );
 	}
 	
 	/** 消息发送 线程池 */
-	private static ExecutorService messageSendExecutor;
-	public static void addJobToMessageSendExecutor( Runnable command ){
+	private ExecutorService messageSendExecutor;
+	public  void addJobToMessageSendExecutor( Runnable command ){
 		init();
 		messageSendExecutor.execute( command );
 	}
 	
 	/** 收集ZKServer状态信息 线程池 */
 	private static ExecutorService zkServerStatusCollectorExecutor;
-	public static void addJobToZKServerStatusCollectorExecutor( Runnable command ){
+	public void addJobToZKServerStatusCollectorExecutor( Runnable command ){
 		init();
 		zkServerStatusCollectorExecutor.execute( command );
 	}
@@ -60,14 +65,14 @@ public class ThreadPoolManager {
 	
 	/** 收集ZKServer机器信息 线程池 */
 	private static ExecutorService zkServerPerformanceCollectorExecutor;
-	public static void addJobToZKServerPerformanceCollectorExecutor( Runnable command ){
+	public void addJobToZKServerPerformanceCollectorExecutor( Runnable command ){
 		init();
 		zkServerPerformanceCollectorExecutor.execute( command );
 	}
 	
 	/** Dump zk cluster config info to memeory*/
 	private static ExecutorService zkClusterConfigDumperExecutor;
-	public static void addJobToZKClusterDumperExecutor( Runnable command ){
+	public void addJobToZKClusterDumperExecutor( Runnable command ){
 		init();
 		zkClusterConfigDumperExecutor.execute( command );
 	}

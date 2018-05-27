@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ZooKeeper集群状态</title>
+    <style>
+        .mytable {
+            align: center;
+            border-collapse: collapse;
+            border: solid #6AA70B;
+            border-width: 0px 0 0 0px;
+            width: 600;
+        }
+
+        .mytable table tr {
+            padding-top: 5px;
+            list-style: none;
+            border-bottom: #6AA70B 1px dotted;
+            font-size: 12px;
+            height: 20px;
+        }
+
+        .mytable table tr.t1 {
+            background-color: #EEEEEE;
+        }
+
+        .mytable table tr.t3 {
+            background-color: #CCCCCC;
+        }
+
+        a:link {
+            text-decoration: none
+        }
+
+        a:active {
+            text-decoration: none
+        }
+
+        a:hover {
+            text-decoration: none
+        }
+
+        a:visited {
+            text-decoration: none
+        }
+    </style>
+    <link rel="stylesheet" type="text/css" th:href="@{/css/popDiv.css}"/>
+    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <script src="http://code.highcharts.com/modules/exporting.js"></script>
+</head>
+<body>
+<h1>ZooKeeper集群状态
+    <font size="2"> 更新时间：<span th:text="${timeOfUpdateZooKeeperStatusSet}"></span></font>
+    <font size="2"> <a th:href="@{/zookeeper/register}">加入监控</a></font>
+</h1>
+
+<select id="clusterSelector" onchange="javascript:location.href='/monitor/clusterStatus?clusterId='+this.value;">
+    <option th:each="entry : ${zooKeeperClusterMap}"
+            th:value="${entry.key}"
+            th:text="${entry.value.clusterName}"
+            th:selected="${entry.key == clusterId}"></option>
+</select>
+<span th:text="${description}"></span><br/><br/>
+
+<div align="left" class="mytable" id="tab">
+    <table style="border: 1px solid #6AA70B; border-collapse: collapse;" cellspacing="0" cellpadding="0">
+        <tr style="background-color:#DDDDDE;">
+            <td><b>Node IP</b></td>
+            <td><b>Role</b></td>
+            <td><b>连接数</b></td>
+            <td><b>Watch数</b></td>
+            <td><b>Watched /Total Path</b></td>
+            <td><b>数据量 Sent/Received</b></td>
+            <td><b>状态</b></td>
+            <td><b>节点自检状态</b></td>
+            <td><b>查看趋势</b></td>
+        </tr>
+
+        <tr th:each="entry : ${zooKeeperStatusMap}">
+            <td th:text="${entry.key}"></td>
+            <td th:text="${entry.value.mode}"></td>
+            <td>
+                <span th:text="${entry.value.connections != null} ? ${#lists.size(entry.value.connections)} : 0"></span>
+                <img style="cursor:pointer;"
+                     src="img/seeDetail.png"
+                     th:attr="data-connections-content=${entry.value.connectionsContent}"
+                     onclick="openDialog('&lt;pre&gt;' + this.getAttribute('data-connections-content') + '&lt;/pre&gt;')"/>
+            </td>
+            <td>
+                <span th:text="${entry.value.watches}"></span>
+                <img style="cursor:pointer;"
+                     src="img/seeDetail.png"
+                     th:onclick="'openDialog(\'<pre>' + ${entry.value.watchedPathMapContent} + '</pre>\')'"/>
+
+
+            </td>
+            <td th:text="${entry.value.watchedPaths} + '/' + ${entry.value.nodeCount}"></td>
+            <td th:text="${entry.value.sent} + '/' + ${entry.value.received}"></td>
+            <td>
+                &nbsp;
+                <img style="cursor:pointer;" src="img/seeDetail.png"
+                     th:onclick="'openDialog(\'' + ${entry.value.statContent} + '\')'"/>
+            </td>
+            <td>
+                <span th:if="${entry.value.statusType == 1}">OK</span>
+                <span th:if="${entry.value.statusType == 0}">Checking</span>
+                <span th:if="${entry.value.statusType == -1}">Initializing</span>
+                <span th:if="${entry.value.statusType != 1 and entry.value.statusType != 0 and entry.value.statusType != -1}">ERROR</span>
+            </td>
+            <td>
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                <a th:href="@{/monitor/reportPAGE(clusterId=${clusterId}, server=${entry.key})}">
+                    <img style="cursor:pointer;" src="img/seeDetail.png"/>
+                </a>
+            </td>
+        </tr>
+    </table>
+
+    <br/><br/>
+    <b>提示</b>:<br><br>
+    1. 节点自检 是指对集群中每个IP所在ZK节点上的PATH: <b>/YINSHI.MONITOR.ALIVE.CHECK</b> 定期进行三次如下流程 : <br/>
+    <b>节点连接</b> - <b>数据发布</b> - <b>修改通知</b> - <b>获取数据</b> - <b>数据对比</b>, 三次流程均成功视为该节点处于正常状态。<br><br>
+    2. 角色分类：<b>L</b>: Leader, <b>F</b>: Follower, <b>O</b>: Observer, <b>S</b>: Standalone
+</div>
+<br>
+<br>
+
+<h1>ZooKeeper实时读写TPS</h1>
+<table border="0" cellspacing="0" cellpadding="0" style="width: 50px;">
+    <tr th:if="${zooKeeperStatusMap != null and not zooKeeperStatusMap.isEmpty()}">
+        <td th:each="entry : ${zooKeeperStatusMap}">
+            <span th:text="${entry.key}"></span>
+            <td style="background-color:#DDDDDE;">
+                <span th:if="${entry != null and entry.value != null and entry.value.rwps != null}">
+                    <span th:text="${entry.value.rwps.toString()}"></span>
+                </span>
+                <span th:unless="${entry != null and entry.value != null and entry.value.rwps != null}">N/A</span>
+            </td>
+        </td>
+    </tr>
+    <tr th:unless="${zooKeeperStatusMap != null and not zooKeeperStatusMap.isEmpty()}">
+        <td colspan="2">暂无数据</td>
+    </tr>
+</table>
+
+<div id="container2" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
+<script type="text/javascript">
+    var Ptr = document.getElementById("tab").getElementsByTagName("tr");
+    function $() {
+        for (i = 1; i < Ptr.length + 1; i++) {
+            Ptr[i - 1].className = (i % 2 > 0) ? "t1" : "t2";
+        }
+    }
+    window.onload = $;
+    for (var i = 0; i < Ptr.length; i++) {
+        Ptr[i].onmouseover = function () {
+            this.tmpClass = this.className;
+            this.className = "t3";
+        };
+        Ptr[i].onmouseout = function () {
+            this.className = this.tmpClass;
+        };
+    }
+</script>
+
+<script type="text/javascript">
+    function NeatDialog(sHTML, sTitle, bCancel) {
+        window.neatDialog = null;
+        this.elt = null;
+        if (document.createElement && document.getElementById) {
+            var dg = document.createElement("div");
+            dg.className = "neat-dialog";
+            if (sTitle)
+                sHTML = '<div class="neat-dialog-title">' + sTitle +
+                    ((bCancel) ?
+                        '<img src="x.gif" alt="Cancel" class="nd-cancel" />' : '') +
+                    '</div>\n' + sHTML;
+            dg.innerHTML = sHTML;
+            var dbg = document.createElement("div");
+            dbg.id = "nd-bdg";
+            dbg.className = "neat-dialog-bg";
+            var dgc = document.createElement("div");
+            dgc.className = "neat-dialog-cont";
+            dgc.appendChild(dbg);
+            dgc.appendChild(dg);
+            if (document.body.offsetLeft > 0)
+                dgc.style.marginLeft = document.body.offsetLeft + "px";
+            document.body.appendChild(dgc);
+            if (bCancel) document.getElementById("nd-cancel").onclick = function () {
+                window.neatDialog.close();
+            };
+            this.elt = dgc;
+            window.neatDialog = this;
+        }
+    }
+
+    NeatDialog.prototype.close = function () {
+        if (this.elt) {
+            this.elt.style.display = "none";
+            this.elt.parentNode.removeChild(this.elt);
+        }
+        window.neatDialog = null;
+    }
+
+    function openDialog(content) {
+        var sHTML = '<p><button onclick="window.neatDialog.close()">关闭</button></p>' + content + '<p><button onclick="window.neatDialog.close()">关闭</button></p>';
+        new NeatDialog(sHTML, "<b>详情</b>", false);
+    }
+</script>
+
+<script>
+    window.onload = function () {
+    }
+</script>
+</body>
+</html>

@@ -18,12 +18,14 @@ import common.toolkit.util.DateUtil;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.collection.CollectionUtil;
 import common.toolkit.util.db.DbcpUtil;
+import org.springframework.stereotype.Repository;
 
 /**
  * Description: Access DB for taokeeper_stat
  * @author yinshi.nc
  * @since 2012-01-05
  */
+@Repository
 public class ReportDAOImpl implements ReportDAO {
 
 	@Override

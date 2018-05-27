@@ -71,9 +71,9 @@ public class HostPerformanceCollectTask implements Runnable {
 									if ( StringUtil.isBlank( server ) )
 										continue;
 									String ip = StringUtil.trimToEmpty( server.split( COLON )[0] );
-									ThreadPoolManager.addJobToZKServerPerformanceCollectorExecutor( 
-											new ZKServerPerformanceCollector( ip, alarmSettings, zookeeperCluster )
-											);
+//									ThreadPoolManager.addJobToZKServerPerformanceCollectorExecutor(
+//											new ZKServerPerformanceCollector( ip, alarmSettings, zookeeperCluster )
+//											);
 								}// for each server
 							}// for each cluster
 						}

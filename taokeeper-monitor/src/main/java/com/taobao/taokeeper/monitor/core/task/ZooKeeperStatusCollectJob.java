@@ -10,17 +10,17 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.context.ContextLoader;
-import org.springframework.web.context.WebApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
 
 import com.taobao.taokeeper.common.GlobalInstance;
 import com.taobao.taokeeper.dao.AlarmSettingsDAO;
 import com.taobao.taokeeper.dao.ZooKeeperClusterDAO;
 import com.taobao.taokeeper.model.AlarmSettings;
 import com.taobao.taokeeper.model.ZooKeeperCluster;
-import com.taobao.taokeeper.monitor.core.Initialization;
 import com.taobao.taokeeper.monitor.core.ThreadPoolManager;
-import com.taobao.taokeeper.monitor.core.task.runable.ZKServerStatusCollector;
+import com.taobao.taokeeper.monitor.core.task.runable.ServerMonitorTask;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.DateUtil;
 import common.toolkit.util.StringUtil;
@@ -31,11 +31,21 @@ import common.toolkit.util.ThreadUtil;
  * @author yinshi.nc
  * @Date 2011-10-28
  */
+@Component
 public class ZooKeeperStatusCollectJob implements Runnable {
 
-	private static final Logger LOG = LoggerFactory.getLogger( Initialization.class );
+	private static final Logger LOG = LoggerFactory.getLogger( ZooKeeperStatusCollectJob.class );
 
 	private boolean isFirst = true;
+
+    @Autowired
+    private ApplicationContext applicationContext;
+    @Autowired
+    private ThreadPoolManager threadPoolManager;
+    @Autowired
+    ZooKeeperClusterDAO zooKeeperClusterDAO;
+    @Autowired
+    AlarmSettingsDAO alarmSettingsDAO;
 	
 	@Override
 	public void run() {
@@ -43,17 +53,12 @@ public class ZooKeeperStatusCollectJob implements Runnable {
 		while ( true ) {
 			
 			if( !GlobalInstance.need_zk_status_collect ){
-				LOG.info( "No need to zk status collect, need_zk_status_collect=" + GlobalInstance.need_zk_status_collect );
+				LOG.info( "Not collect zookeeper status, need_zk_status_collect=" + GlobalInstance.need_zk_status_collect );
 				ThreadUtil.sleep( 1000 * 60 * MINS_RATE_OF_COLLECT_ZOOKEEPER );
 				continue;
 			}
-			
-			
+
 			try {
-				// 根据clusterId来获取一个zk集群
-				WebApplicationContext wac = ContextLoader.getCurrentWebApplicationContext();
-				ZooKeeperClusterDAO zooKeeperClusterDAO = ( ZooKeeperClusterDAO ) wac.getBean( "zooKeeperClusterDAO" );
-				AlarmSettingsDAO alarmSettingsDAO = ( AlarmSettingsDAO ) wac.getBean( "alarmSettingsDAO" );
 				AlarmSettings alarmSettings = null;
 				try {
 					List< ZooKeeperCluster > zooKeeperClusterSet = null;
@@ -80,10 +85,10 @@ public class ZooKeeperStatusCollectJob implements Runnable {
 									
 									//这里插入一个任务
 									if( isFirst ){
-										ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ZKServerStatusCollector( ip, port, alarmSettings, zookeeperCluster, false ) );
+										ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ServerMonitorTask( ip, port, alarmSettings, zookeeperCluster, false ) );
 										isFirst = false;
 									}else{
-										ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ZKServerStatusCollector( ip, port, alarmSettings, zookeeperCluster, true ) );
+										ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ServerMonitorTask( ip, port, alarmSettings, zookeeperCluster, true ) );
 									}
 								}// for each server
 							}// for each cluster

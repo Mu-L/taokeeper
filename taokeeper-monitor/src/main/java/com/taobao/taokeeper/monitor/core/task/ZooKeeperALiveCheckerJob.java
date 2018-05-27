@@ -78,7 +78,7 @@ public class ZooKeeperALiveCheckerJob implements Runnable {
 									GlobalInstance.removeFromAllCheckingCluster( zookeeperCluster.getClusterId() + EMPTY_STRING );
 									continue;
 								}
-								ThreadPoolManager.addJobToZooKeeperNodeAliveCheckExecutor( new ZKServerAliveCheck( zookeeperCluster, alarmSettings ) );
+								//ThreadPoolManager.addJobToZooKeeperNodeAliveCheckExecutor( new ZKServerAliveCheck( zookeeperCluster, alarmSettings ) );
 							}// if cluster not null
 						}// for each cluster
 					}// for each server

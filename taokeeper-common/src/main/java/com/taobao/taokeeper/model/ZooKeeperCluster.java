@@ -14,10 +14,6 @@ public class ZooKeeperCluster {
 		return serverList;
 	}
 
-	public void setServerList( List< String > serverList ) {
-		this.serverList = serverList;
-	}
-
 	private int clusterId;
 	private String clusterName;
 	/** ip:prot */
@@ -39,6 +35,10 @@ public class ZooKeeperCluster {
 	public void setClusterName( String clusterName ) {
 		this.clusterName = clusterName;
 	}
+
+    public void setServerList( List< String > serverList ) {
+        this.serverList = serverList;
+    }
 
 	public String getDescription() {
 		return description;

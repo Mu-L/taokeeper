@@ -78,9 +78,9 @@ public class DbcpUtil {
 			p.setProperty( "removeAbandonedTimeout", "120" );
 			p.setProperty( "testOnBorrow", "true" );
 			p.setProperty( "logAbandoned", "true" );
-			LOG.warn( "Start init datasource[driverName:" + driverClassName + ", url: " + p.getProperty( "url" ) + ", username: [" + username + "], password: [" + password + "]" );
+			LOG.debug( "Start init datasource[driverName:" + driverClassName + ", url: " + p.getProperty( "url" ) + ", username: [" + username + "], password: [" + password + "]" );
 			DbcpUtil.dataSource = ( BasicDataSource ) BasicDataSourceFactory.createDataSource( p );
-			LOG.warn( "完成数据源创建，是否链接：" + !DbcpUtil.dataSource.isClosed() );
+			LOG.info( "Finish connect database." );
 		} catch ( Exception e ) {
 			throw new Exception( "创建数据源失败: " + e.getMessage(), e.getCause() );
 		}
@@ -172,7 +172,7 @@ public class DbcpUtil {
 	 * 执行查询SQL, 注意，执行完这个方法必须执行： <br>
 	 * 1. DataSourceManager.closeResultSetAndStatement( resultSet, stmt ); <br>
 	 * 2. DataSourceManager.returnBackConnectionToPool( conn );
-	 * @param selectSql
+	 * @param querySql
 	 *            查询SQL语句
 	 */
 	public static DBConnectionResource executeQuery( String querySql ) throws Exception {

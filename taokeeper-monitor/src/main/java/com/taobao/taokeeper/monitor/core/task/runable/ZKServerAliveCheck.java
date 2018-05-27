@@ -14,9 +14,6 @@ import com.taobao.taokeeper.common.GlobalInstance;
 import com.taobao.taokeeper.model.AlarmSettings;
 import com.taobao.taokeeper.model.Subscriber;
 import com.taobao.taokeeper.model.ZooKeeperCluster;
-import com.taobao.taokeeper.model.type.Message;
-import com.taobao.taokeeper.monitor.core.ThreadPoolManager;
-import com.taobao.taokeeper.reporter.alarm.TbMessageSender;
 import common.toolkit.util.ObjectUtil;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.io.ServletUtil;
@@ -74,7 +71,7 @@ public class ZKServerAliveCheck implements Runnable {
 				// TODO 这里的并发问题要考虑下。
 				// 如果已经有线程在对其进行自检了。
 				String zkIp = ServletUtil.paraseIpAndPortFromServer( server )[0] ;
-				if ( 0 == GlobalInstance.getZooKeeperStatusType( zkIp ) ){
+				if ( 0 == GlobalInstance.getZooKeeperStatusTypeByServer( zkIp ) ){
 					LOG.info( zkIp + " is checking, no need to check." );
 					continue;
 				}
@@ -96,13 +93,13 @@ public class ZKServerAliveCheck implements Runnable {
 							if ( !sub.checkIfAlive() ) { // 连续两次check失败
 								GlobalInstance.putZooKeeperStatusType( ip, 2 );
 								// 报警
-								if ( GlobalInstance.needAlarm.get() ) {
-									ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( wangwangList, "ZooKeeper所在机器存活性检测失败" + this.zooKeeperCluster.getClusterName(), "Zk node: "
-											+ server + " 存活性检测失败", Message.MessageType.WANGWANG ) ) );
-									
-									ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( phoneList, "ZooKeeper所在机器存活性检测失败" + this.zooKeeperCluster.getClusterName(), "Zk node: " + server
-											+ " 存活性检测失败", Message.MessageType.WANGWANG ) ) );
-								}
+//								if ( GlobalInstance.needAlarm.get() ) {
+//									ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( wangwangList, "ZooKeeper所在机器存活性检测失败" + this.zooKeeperCluster.getClusterName(), "Zk node: "
+//											+ server + " 存活性检测失败", Message.MessageType.WANGWANG ) ) );
+//
+//									ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( phoneList, "ZooKeeper所在机器存活性检测失败" + this.zooKeeperCluster.getClusterName(), "Zk node: " + server
+//											+ " 存活性检测失败", Message.MessageType.WANGWANG ) ) );
+//								}
 								LOG.info( "#-" + this.zooKeeperCluster.getClusterName() + "-" + server + "自检结果ERROR" );
 								continue;
 							}
@@ -115,16 +112,16 @@ public class ZKServerAliveCheck implements Runnable {
 						continue;
 					} catch ( Throwable e ) {
 						// 报警
-						if ( GlobalInstance.needAlarm.get() ) {
-							
-							ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( wangwangList, "ZooKeeper所在机器存活性检测失败" + this.zooKeeperCluster.getClusterName(), "Zk node: "
-									+ server + " 存活性检测失败" + e.getMessage(), Message.MessageType.WANGWANG ) ) );
-							
-							
-							ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( phoneList, "ZooKeeper所在机器存活性检测失败" + this.zooKeeperCluster.getClusterName(), "Zk node: " + server
-									+ " 存活性检测失败" + e.getMessage(), Message.MessageType.WANGWANG ) ) );
-							
-						}
+//						if ( GlobalInstance.needAlarm.get() ) {
+//
+//							ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( wangwangList, "ZooKeeper所在机器存活性检测失败" + this.zooKeeperCluster.getClusterName(), "Zk node: "
+//									+ server + " 存活性检测失败" + e.getMessage(), Message.MessageType.WANGWANG ) ) );
+//
+//
+//							ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( phoneList, "ZooKeeper所在机器存活性检测失败" + this.zooKeeperCluster.getClusterName(), "Zk node: " + server
+//									+ " 存活性检测失败" + e.getMessage(), Message.MessageType.WANGWANG ) ) );
+//
+//						}
 						GlobalInstance.putZooKeeperStatusType( ip, 2 );
 						LOG.info( "Exception when check #-" + this.zooKeeperCluster.getClusterName() + "-" + server + ", Error: " + e.getMessage(), e );
 					} finally {

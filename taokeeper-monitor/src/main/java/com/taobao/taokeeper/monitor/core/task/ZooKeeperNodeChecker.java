@@ -86,7 +86,7 @@ public class ZooKeeperNodeChecker extends TimerTask{
 	/**
 	 * 检查存活性，不报警. 这个方法通常是在添加新的zk集群后调用的.
 	 * 
-	 * @param server是一个包含ip的参数
+	 * @param zookeeperCluster 是一个包含ip的参数
 	 */
 	private void checkNodePath( final ZooKeeperCluster zookeeperCluster ) {
 		
@@ -158,14 +158,14 @@ public class ZooKeeperNodeChecker extends TimerTask{
 					if( !listConfig.contains( pathReal ) ){
 						//规定path下面只能这些path，但是出现了额外的path
 						// 报警
-						if ( GlobalInstance.needAlarm.get() ) {
-							ThreadPoolManager.addJobToMessageSendExecutor( 
-									new TbMessageSender( 
-											new Message( wangwangList,//
-													"ZooKeeper Node的path检查结果,cluster: " + zookeeperCluster.getClusterName(),//
-													 path + " 下存在多余的node："  + pathReal, //
-													 Message.MessageType.WANGWANG ) ) );
-						}
+//						if ( GlobalInstance.needAlarm.get() ) {
+//							ThreadPoolManager.addJobToMessageSendExecutor(
+//									new TbMessageSender(
+//											new Message( wangwangList,//
+//													"ZooKeeper Node的path检查结果,cluster: " + zookeeperCluster.getClusterName(),//
+//													 path + " 下存在多余的node："  + pathReal, //
+//													 Message.MessageType.WANGWANG ) ) );
+//						}
 					}
 				}
 			}			
@@ -189,14 +189,14 @@ public class ZooKeeperNodeChecker extends TimerTask{
 					if( listReal.contains( pathConfig ) ){
 						//规定path下面不能有这些path，但是出现了
 						// 报警
-						if ( GlobalInstance.needAlarm.get() ) {
-							ThreadPoolManager.addJobToMessageSendExecutor( 
-									new TbMessageSender( 
-											new Message( wangwangList,//
-												   "ZooKeeper Node的path检查结果,cluster: " + zookeeperCluster.getClusterName(),//
-												    path + " 下存在多余的node："  + pathConfig, //
-													Message.MessageType.WANGWANG ) ) );
-						}
+//						if ( GlobalInstance.needAlarm.get() ) {
+//							ThreadPoolManager.addJobToMessageSendExecutor(
+//									new TbMessageSender(
+//											new Message( wangwangList,//
+//												   "ZooKeeper Node的path检查结果,cluster: " + zookeeperCluster.getClusterName(),//
+//												    path + " 下存在多余的node："  + pathConfig, //
+//													Message.MessageType.WANGWANG ) ) );
+//						}
 					}
 				}
 			}			

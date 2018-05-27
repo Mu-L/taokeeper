@@ -11,9 +11,11 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import common.toolkit.util.number.IntegerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +26,7 @@ import com.taobao.taokeeper.model.AlarmSettings;
 import com.taobao.taokeeper.model.ZooKeeperCluster;
 import com.taobao.taokeeper.monitor.core.ThreadPoolManager;
 import com.taobao.taokeeper.monitor.core.task.ZooKeeperALiveCheckerJob;
-import com.taobao.taokeeper.monitor.core.task.runable.ZKClusterConfigDumper;
+import com.taobao.taokeeper.monitor.core.task.runable.ClusterConfigLoader;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.collection.CollectionUtil;
@@ -43,7 +45,10 @@ public class ZooKeeperController extends BaseController {
 	private static final Logger LOG = LoggerFactory.getLogger( ZooKeeperController.class );
 
     @Autowired
-    private ZKClusterConfigDumper zkClusterConfigDumper;
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private ThreadPoolManager threadPoolManager;
 
     @GetMapping("/register")
     public String showRegisterPage(Model model) {
@@ -73,25 +78,26 @@ public class ZooKeeperController extends BaseController {
                     isSuccess = true;
                     LOG.info( handleMessage + ": " + zooKeeperCluster );
 
-                    //Update zk cluster config info of memory
-                    ThreadPoolManager.addJobToZKClusterDumperExecutor( zkClusterConfigDumper );
+                    //Update cluster info of memory
+                    ClusterConfigLoader loader = applicationContext.getBean(ClusterConfigLoader.class);
+                    threadPoolManager.addJobToZKClusterDumperExecutor(loader);
 
                     //现在要加入一个默认的报警
-                    alarmSettingsDAO.addAlarmSettings( new AlarmSettings( clusterId, "5", "60", "70", "2", "银时", "15869027928", "yinshi.nc@taobao.com", "200","1000","/home/yinshi.nc","/home/yinshi.nc","70","" ) );
+                    //alarmSettingsDAO.addAlarmSettings( new AlarmSettings( clusterId, "5", "60", "70", "2", "银时", "15869027928", "yinshi.nc@taobao.com", "200","1000","/home/yinshi.nc","/home/yinshi.nc","70","" ) );
+//
+//                    //启动自检
+//                    Thread aliveCheckThread = new Thread( new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            ZooKeeperALiveCheckerJob job = new ZooKeeperALiveCheckerJob();
+//                            for( String server : zooKeeperCluster.getServerList() ){
+//                                job.checkAliveNoAlarm( server );
+//                            }
+//                        }
+//                    });
+//                    aliveCheckThread.start();
 
-                    //启动自检
-                    Thread aliveCheckThread = new Thread( new Runnable() {
-                        @Override
-                        public void run() {
-                            ZooKeeperALiveCheckerJob job = new ZooKeeperALiveCheckerJob();
-                            for( String server : zooKeeperCluster.getServerList() ){
-                                job.checkAliveNoAlarm( server );
-                            }
-                        }
-                    });
-                    aliveCheckThread.start();
-
-                    handleMessage = "Success register a zookeeper cluster, and add a default alarm settings for you.";
+                    //handleMessage = "Success register a zookeeper cluster, and add a default alarm settings for you.";
                 }else{
                     handleMessage = "Register a zookeeper cluster fail";
                 }
@@ -103,7 +109,7 @@ public class ZooKeeperController extends BaseController {
         }
 
         if( isSuccess ){
-            return "redirect:/zookeeper/zookeeperSettings?clusterId=" + clusterId + "&handleMessage=" + handleMessage;
+            return "redirect:/monitor/clusterStatus?clusterId=" + clusterId + "&handleMessage=" + handleMessage;
         }else{
             model.addAttribute("handleMessage", handleMessage );
             return "monitor/zookeeperRegisterPAGE";
@@ -154,52 +160,45 @@ public class ZooKeeperController extends BaseController {
 
 	}
 
-	/**
-	 * 注意，这里更新完数据库后，还要更新缓存。
-	 */
-	@RequestMapping(params = "method=updateZooKeeperSettingsHandle")
-	public String updateZooKeeperSettingsHandle(HttpServletRequest request, HttpServletResponse response,
-			String clusterId,
-			String clusterName,
-			String serverListString,
-			String description ) {
+    @PostMapping("/handleUpdateZooKeeperSettings")
+    public String handleUpdateZooKeeperSettings(Model model,
+                                 @ModelAttribute("zooKeeperCluster") ZooKeeperCluster zooKeeperCluster
+    ) {
+        String handleMessage = "";
+        int clusterId = 0;
+        if( null == zooKeeperCluster
+                || zooKeeperCluster.getClusterId() <= 0
+                || StringUtil.isBlank( zooKeeperCluster.getClusterName() )
+                || CollectionUtil.isBlank( zooKeeperCluster.getServerList() )
+        ){
+            handleMessage = "Cluster id or cluster name or serverlist empty.";
+        }else{
+            try {
 
-		try {
-			if( StringUtil.isBlank( clusterId ) )
-				throw new Exception( "clusterId 不能为空" );
+                if( zooKeeperClusterDAO.updateZooKeeperSettingsByClusterId( zooKeeperCluster ) ){
+                    handleMessage = "Update ZooKeeper settings success.";
+                    LOG.info( handleMessage + "：" + zooKeeperCluster );
 
-			ZooKeeperCluster zooKeeperCluster = new ZooKeeperCluster();
-			zooKeeperCluster.setClusterId( Integer.parseInt( clusterId ) );
-			zooKeeperCluster.setClusterName( clusterName );
-			zooKeeperCluster.setDescription( description );
-			if( !StringUtil.isBlank( serverListString ) ){
-				zooKeeperCluster.setServerList( ListUtil.parseList( serverListString.replace( SQUARE_BRACKETS_LEFT, EMPTY_STRING ).replace( SQUARE_BRACKETS_RIGHT, EMPTY_STRING ), COMMA ) );
-			}
+                    //Update zk cluster config info of memory
+                    ClusterConfigLoader _clusterConfigLoader = applicationContext.getBean(ClusterConfigLoader.class);
+                    threadPoolManager.addJobToZKClusterDumperExecutor(_clusterConfigLoader);
 
-			//进行Update
-			String handleMessage = null;
-			if( zooKeeperClusterDAO.updateZooKeeperSettingsByClusterId( zooKeeperCluster ) ){
-				LOG.info( "完成zooKeeper集群更新：" + zooKeeperCluster );
-				//Update zk cluster config info of memory
-				ThreadPoolManager.addJobToZKClusterDumperExecutor( new ZKClusterConfigDumper() );
+                    LOG.info( "Update ZooKeeper settings of chache." );
+                }else{
+                    handleMessage = "Update ZooKeeper settings fail.";
+                    LOG.error( handleMessage + "：" + zooKeeperCluster );
+                }
+            }catch ( DaoException e){
+                handleMessage = "Update ZooKeeper settings fail.";
+                LOG.error( handleMessage, e);
+            }
+        }
 
-				handleMessage = "[Update Success], and update cache success.";
-			}else{
-				handleMessage = "Update Fail";
-				LOG.warn( "对zooKeeper集群信息更新失败-" + zooKeeperCluster );
-			}
-			return "redirect:/zooKeeper.do?method=zooKeeperSettingsPAGE&clusterId=" + clusterId + "&handleMessage=" + handleMessage;
-		} catch ( NumberFormatException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch ( DaoException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch ( Exception e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
+        return "redirect:/zookeeper/zookeeperSettings?clusterId=" + clusterId + "&handleMessage=" + handleMessage;
+    }
+
+
+
+
 
 }

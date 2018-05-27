@@ -19,11 +19,14 @@ import common.toolkit.util.StringUtil;
 import common.toolkit.util.collection.ArrayUtil;
 import common.toolkit.util.collection.CollectionUtil;
 import common.toolkit.util.db.DbcpUtil;
+import org.springframework.stereotype.Repository;
+
 /**
  * Description: Access DB for zookeeper cluster
  * @author   yinshi.nc
  * @Date	 2011-10-28
  */
+@Repository
 public class ZooKeeperClusterDAOImpl implements ZooKeeperClusterDAO{
 	
 	public ZooKeeperCluster getZooKeeperClusterByCulsterId( int clusterId )throws DaoException{

@@ -12,11 +12,14 @@ import common.toolkit.entity.db.DBConnectionResource;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.db.DbcpUtil;
+import org.springframework.stereotype.Repository;
+
 /**
  * Description: Access DB for taokeeper settings
  * @author   yinshi.nc
  * @Date	 2011-10-28
  */
+@Repository
 public class SettingsDAOImpl implements SettingsDAO{
 	
 	public TaoKeeperSettings getTaoKeeperSettingsBySettingsId( int settingsId )throws DaoException{

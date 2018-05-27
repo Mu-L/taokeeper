@@ -13,12 +13,14 @@ import common.toolkit.constant.EmptyObjectConstant;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.ObjectUtil;
 import common.toolkit.util.StringUtil;
+import org.springframework.stereotype.Repository;
 
 /**
  * Description: Service of taokeeper_stat
  * @author yinshi.nc
  * @since 2012-01-05
  */
+@Repository
 public class ReportServiceImpl extends BaseService implements ReportService {
 
 	

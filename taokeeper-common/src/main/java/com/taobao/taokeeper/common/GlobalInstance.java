@@ -105,41 +105,46 @@ public class GlobalInstance {
 		return hostPerformanceEntitySet;
 	}
 
-	/** 将机器的状态信息放置到全局变量中去 */
-	public static void putZooKeeperStatus( String ip, ZooKeeperStatusV2 zooKeeperStatus ) {
-		zooKeeperStatusSet.put( ip, zooKeeperStatus );
+	/** 将机器的状态信息放置到全局变量中去
+     * @param server ip:port
+     * */
+	public static void putZooKeeperStatus(String server, ZooKeeperStatusV2 zooKeeperStatus ) {
+		zooKeeperStatusSet.put(server, zooKeeperStatus );
 	}
 
-	/** 根据ip获取机器状态信息 */
-	public static ZooKeeperStatusV2 getZooKeeperStatus( String ip ) {
-		return zooKeeperStatusSet.get( ip );
+	/**
+     * 根据ip获取机器状态信息
+     * @param server ip:port
+     */
+	public static ZooKeeperStatusV2 getZooKeeperStatusByServer(String server) {
+		return zooKeeperStatusSet.get(server);
 	}
 
 	/** 将所有机器的状态信息返回 */
-	public static Map< String/** IP */
+	public static Map< String/** ip:port */
 	, ZooKeeperStatusV2 > getAllZooKeeperStatus() {
 		return zooKeeperStatusSet;
 	}
 
 	/**
 	 * 将机器的自检结果放置到全局变量中去
-	 * 
+	 * @param server ip:port
 	 * @param statusType
 	 *            : 0: CHECKING 1: OK other: ERROR
 	 */
-	public static void putZooKeeperStatusType( String ip, int statusType ) {
-		zooKeeperStatusTypeSet.put( ip, statusType );
+	public static void putZooKeeperStatusType( String server, int statusType ) {
+		zooKeeperStatusTypeSet.put( server, statusType );
 	}
 
 	/**
 	 * 根据ip获取机器自检结果
-	 * 
+	 * @param server ip:port
 	 * @return statusType: 0: CHECKING 1: OK other: ERROR
 	 * */
-	public static int getZooKeeperStatusType( String ip ) {
+	public static int getZooKeeperStatusTypeByServer(String server) {
 		int status = 0;
 		try {
-			status = zooKeeperStatusTypeSet.get( ip );
+			status = zooKeeperStatusTypeSet.get(server);
 		} catch ( Exception e ) {
 			return -1;
 		}

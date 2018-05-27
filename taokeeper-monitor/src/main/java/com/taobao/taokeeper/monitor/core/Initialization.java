@@ -8,6 +8,7 @@ import com.taobao.taokeeper.model.TaoKeeperSettings;
 import com.taobao.taokeeper.model.type.Message;
 import com.taobao.taokeeper.monitor.core.task.*;
 import com.taobao.taokeeper.monitor.core.task.runable.ClientThroughputStatJob;
+import com.taobao.taokeeper.monitor.core.task.runable.ClusterConfigLoader;
 import com.taobao.taokeeper.reporter.alarm.TbMessageSender;
 import common.toolkit.constant.BaseConstant;
 import common.toolkit.exception.DaoException;
@@ -40,7 +41,7 @@ public class Initialization extends HttpServlet implements Servlet {
 	public void init() {
 
 		/** Init threadpool */
-		ThreadPoolManager.init();
+		//ThreadPoolManager.init();
 
 		initSystem();
 
@@ -133,8 +134,9 @@ public class Initialization extends HttpServlet implements Servlet {
 
 		
 		LOG.info( "=================================Finish init system===========================" );
-		ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( "银时", "TaoKeeper启动", "TaoKeeper启动",
-				Message.MessageType.WANGWANG ) ) );
+		//ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( "银时", "TaoKeeper启动", "TaoKeeper启动",Message.MessageType.WANGWANG ) ) );
+
+        //ThreadPoolManager.addJobToZKClusterDumperExecutor( new ClusterConfigLoader());
 
 		WebApplicationContext wac = ContextLoader.getCurrentWebApplicationContext();
 		SettingsDAO settingsDAO = ( SettingsDAO ) wac.getBean( "taoKeeperSettingsDAO" );

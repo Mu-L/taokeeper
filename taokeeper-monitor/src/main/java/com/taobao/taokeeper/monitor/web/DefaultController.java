@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 public class DefaultController extends BaseController {
     @GetMapping("/")
 	public String switchOfNeedAlarmPAGE(HttpServletRequest request, HttpServletResponse response ) {
-		return "redirect:/zookeeperStatus/showZooKeeperStatusPAGE";
+		return "redirect:/monitor/clusterStatus";
 	}
 	
 }
