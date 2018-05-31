@@ -1,17 +1,12 @@
 package com.taobao.taokeeper.monitor.web;
 import static common.toolkit.constant.EmptyObjectConstant.EMPTY_STRING;
-import static common.toolkit.constant.SymbolConstant.COMMA;
-import static common.toolkit.constant.SymbolConstant.SQUARE_BRACKETS_LEFT;
-import static common.toolkit.constant.SymbolConstant.SQUARE_BRACKETS_RIGHT;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import common.toolkit.util.number.IntegerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,15 +17,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.taobao.taokeeper.common.GlobalInstance;
-import com.taobao.taokeeper.model.AlarmSettings;
 import com.taobao.taokeeper.model.ZooKeeperCluster;
 import com.taobao.taokeeper.monitor.core.ThreadPoolManager;
-import com.taobao.taokeeper.monitor.core.task.ZooKeeperALiveCheckerJob;
-import com.taobao.taokeeper.monitor.core.task.runable.ClusterConfigLoader;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.collection.CollectionUtil;
-import common.toolkit.util.collection.ListUtil;
 import common.toolkit.util.io.ServletUtil;
 
 /**

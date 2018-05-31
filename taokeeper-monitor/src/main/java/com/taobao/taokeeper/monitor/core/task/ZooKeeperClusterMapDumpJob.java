@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.taobao.taokeeper.monitor.core.ThreadPoolManager;
-import com.taobao.taokeeper.monitor.core.task.runable.ClusterConfigLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;

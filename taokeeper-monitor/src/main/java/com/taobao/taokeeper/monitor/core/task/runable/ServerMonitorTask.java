@@ -17,12 +17,17 @@ import common.toolkit.util.StringUtil;
 import common.toolkit.util.collection.MapUtil;
 import common.toolkit.util.io.IOUtil;
 import common.toolkit.util.io.SSHUtil;
+import common.toolkit.util.io.SocketCommandUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.context.ContextLoader;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -88,18 +93,26 @@ public class ServerMonitorTask implements Runnable {
             }
             ZooKeeperStatusV2 zooKeeperStatus = new ZooKeeperStatusV2();
 
-            handleStat( ip, Integer.parseInt( port ), zooKeeperStatus );
-            telnetZooKeeperAndHandleWchs( ip, Integer.parseInt( port ), zooKeeperStatus );
-            sshZooKeeperAndHandleWchc( ip, Integer.parseInt( port ), zooKeeperStatus, zookeeperCluster.getClusterId() );
-            sshZooKeeperAndHandleRwps( ip, Integer.parseInt( port ), (ZooKeeperStatusV2)zooKeeperStatus, zookeeperCluster.getClusterId() );
-            checkAndAlarm( alarmSettings, zooKeeperStatus, zookeeperCluster.getClusterName() );
-            GlobalInstance.putZooKeeperStatus( ip+":"+port, zooKeeperStatus );
-            //Store taokeeper stat to DB
-            if( needStoreToDB ){
-                storeTaoKeeperStatToDB( zookeeperCluster.getClusterId(), (ZooKeeperStatusV2)zooKeeperStatus );
+            try{
+                handleStat( ip, Integer.parseInt( port ), zooKeeperStatus );
+                LOG.info("Finish handle ZooKeeper Command[stat] @"+ip+":"+port);
+            }catch ( IOException ioe ){
+                LOG.error("Exception when handle ZooKeeper Command[stat] @"+ip+":"+port,ioe);
             }
 
-            LOG.info( "Finish #" + zookeeperCluster.getClusterName() + "-" + ip );
+
+
+            //telnetZooKeeperAndHandleWchs( ip, Integer.parseInt( port ), zooKeeperStatus );
+            //sshZooKeeperAndHandleWchc( ip, Integer.parseInt( port ), zooKeeperStatus, zookeeperCluster.getClusterId() );
+            //sshZooKeeperAndHandleRwps( ip, Integer.parseInt( port ), (ZooKeeperStatusV2)zooKeeperStatus, zookeeperCluster.getClusterId() );
+            //checkAndAlarm( alarmSettings, zooKeeperStatus, zookeeperCluster.getClusterName() );
+            //GlobalInstance.putZooKeeperStatus( ip+":"+port, zooKeeperStatus );
+            //Store taokeeper stat to DB
+//            if( needStoreToDB ){
+//                storeTaoKeeperStatToDB( zookeeperCluster.getClusterId(), (ZooKeeperStatusV2)zooKeeperStatus );
+//            }
+
+//            LOG.info( "Finish #" + zookeeperCluster.getClusterName() + "-" + ip );
 
         } catch ( Exception e ) {
             e.printStackTrace();
@@ -109,23 +122,15 @@ public class ServerMonitorTask implements Runnable {
     /**
      * Exec 4 words command: stat
      */
-    private void handleStat(String ip, int port, ZooKeeperStatus zooKeeperStatus ) {
+    private void handleStat(String ip, int port, ZooKeeperStatus zooKeeperStatus ) throws IOException {
 
-        BufferedReader bufferedRead = null;
+        InputStream is = null;
+        BufferedReader reader = null;
         StringBuffer sb = new StringBuffer();
-        SSHResource sshResource = null;
-        try {
-            sshResource = SSHUtil.executeWithoutHandleBufferedReader( ip, SystemConstant.portOfSSH, userNameOfSSH, passwordOfSSH,
-                    StringUtil.replaceSequenced( COMMAND_STAT, ip, port + EMPTY_STRING ) );
-            if ( null == sshResource ) {
-                LOG.warn( "No output of " + StringUtil.replaceSequenced( COMMAND_STAT, ip, port + EMPTY_STRING ) );
-                return;
-            }
-            bufferedRead = sshResource.reader;
-            if ( null == bufferedRead ) {
-                LOG.warn( "No output of " + StringUtil.replaceSequenced( COMMAND_STAT, ip, port + EMPTY_STRING ) );
-                return;
-            }
+        try{
+            is = SocketCommandUtils.executeSocketCommandAsStream(ip,port,COMMAND_STAT);
+            reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+            String line;
             /**
              * 通常的内容是这样： Zookeeper version: 3.3.3-1073969, built on 02/23/2011
              * 22:27 GMT Clients:
@@ -135,10 +140,9 @@ public class ServerMonitorTask implements Runnable {
              * Latency min/avg/max: 0/1/227 Received: 2349 Sent: 2641
              * Outstanding: 0 Zxid: 0xc00000243 Mode: follower Node count: 8
              */
-            String line = "";
-            zooKeeperStatus.setIp( ip );
             List< String > clientConnectionList = new ArrayList< String >();
-            while ( ( line = bufferedRead.readLine() ) != null ) {
+            zooKeeperStatus.setIp(ip);
+            while ((line = reader.readLine()) != null) {
                 if ( analyseLineIfClientConnection( line ) ) { // 检查是否是客户端连接
                     clientConnectionList.add( line );
                 } else if ( line.contains( MODE_FOLLOWER ) ) {
@@ -160,15 +164,9 @@ public class ServerMonitorTask implements Runnable {
             }
             zooKeeperStatus.setClientConnectionList( clientConnectionList );
             zooKeeperStatus.setStatContent( sb.toString() );
-        } catch ( SSHException e ) {
-            LOG.warn( "Error when telnetZooKeeperAndHandleStat:[ip:" + ip + ", port:" + port + " ] " + e.getMessage() );
-        } catch ( Exception e ) {
-            LOG.error( "程序出错:" + e.getMessage() );
         } finally {
-            IOUtil.closeReader( bufferedRead );
-            if ( null != sshResource ) {
-                sshResource.closeAllResource();
-            }
+            if(null!=is) is.close();
+            if(null!=reader) reader.close();
         }
     }
 

@@ -9,7 +9,9 @@ import static common.toolkit.constant.SymbolConstant.COMMA;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.taobao.taokeeper.dao.ZooKeeperClusterDAO;
 import com.taobao.taokeeper.model.ZooKeeperCluster;
@@ -71,7 +73,6 @@ public class ZooKeeperClusterDAOImpl implements ZooKeeperClusterDAO{
 
 	@Override
 	public List< ZooKeeperCluster > getAllDetailZooKeeperCluster() throws DaoException {
-		
 		List<ZooKeeperCluster> zookeeperClusterList = new ArrayList< ZooKeeperCluster >();
     	//从数据库中获取指定zookeeper集群中所有机器
 		ResultSet rs = null;
@@ -113,7 +114,50 @@ public class ZooKeeperClusterDAOImpl implements ZooKeeperClusterDAO{
 		}
 	}
 
-	@Override
+    @Override
+    public Map<Integer, ZooKeeperCluster> getAllCluster() throws DaoException {
+
+        Map<Integer, ZooKeeperCluster> zookeeperClusterMap = new HashMap< Integer, ZooKeeperCluster >();
+        //从数据库中获取指定zookeeper集群中所有机器
+        ResultSet rs = null;
+        DBConnectionResource myResultSet = null;
+        try {
+            myResultSet = DbcpUtil.executeQuery( SQL_QUERY_ALL_DETAIL_CLUSTER );
+            if( null == myResultSet )
+                throw new DaoException( "没有返回结果" );
+            rs = myResultSet.resultSet;
+            while( rs.next() ){
+
+                int      clusterId		   = rs.getInt( "cluster_id" );
+                String clusterName = rs.getString( "cluster_name" );
+                String serverListStr  = rs.getString( "server_list" );
+                String description    = rs.getString( "description" );
+
+                List<String> serverList  = null;
+                if( !StringUtil.isBlank( serverListStr ) ){
+                    String[] serverListArray = serverListStr.split( COMMA );
+                    serverList = ArrayUtil.toArrayList( serverListArray );
+                }
+                ZooKeeperCluster zookeeperCluster = new ZooKeeperCluster();
+                zookeeperCluster.setClusterId( clusterId );
+                zookeeperCluster.setClusterName(clusterName);
+                zookeeperCluster.setServerList( serverList );
+                zookeeperCluster.setDescription(description);
+
+                zookeeperClusterMap.put( clusterId, zookeeperCluster);
+            }
+            return zookeeperClusterMap;
+        } catch ( Exception e ) {
+            throw new DaoException( "Error when query all cluster, Error: " + e.getMessage(), e );
+        }finally{
+            if( null != myResultSet ){
+                DbcpUtil.closeResultSetAndStatement( rs, myResultSet.statement );
+                DbcpUtil.returnBackConnectionToPool( myResultSet.connection );
+            }
+        }
+    }
+
+    @Override
 	public List< ZooKeeperCluster > getAllZooKeeperClusterIdAndName() throws DaoException {
 		List<ZooKeeperCluster> zookeeperClusterList = new ArrayList< ZooKeeperCluster >();
 		ResultSet rs = null;

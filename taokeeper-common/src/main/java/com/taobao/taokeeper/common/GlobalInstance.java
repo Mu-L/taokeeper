@@ -3,6 +3,7 @@ package com.taobao.taokeeper.common;
 import static common.toolkit.constant.EmptyObjectConstant.EMPTY_STRING;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -133,7 +134,7 @@ public class GlobalInstance {
 	 *            : 0: CHECKING 1: OK other: ERROR
 	 */
 	public static void putZooKeeperStatusType( String server, int statusType ) {
-		zooKeeperStatusTypeSet.put( server, statusType );
+		zooKeeperStatusTypeSet.put( server, Integer.valueOf(statusType));
 	}
 
 	/**
@@ -164,7 +165,7 @@ public class GlobalInstance {
 	
 	/** 根据clusterId获取这个集群的所有连接 */
 	public static Map< String, Connection > getZooKeeperClientConnectionMapByClusterId( int clusterId ) {
-		return zooKeeperClientConnectionMapOfCluster.get( clusterId );
+		return zooKeeperClientConnectionMapOfCluster.get(Optional.of(clusterId));
 	}
 	/** 获取所有集群的所有连接 */
 	public static Map< Integer, Map< String, Connection >> getAllZooKeeperClientConnectionMap() {
@@ -172,7 +173,7 @@ public class GlobalInstance {
 	}
 	/** 按clusterId将连接信息放置到全局变量中去 */
 	public static void putZooKeeperClientConnectionMapByClusterId( int clusterId, Map< String, Connection > connectionMap ) {
-		zooKeeperClientConnectionMapOfCluster.put( clusterId, connectionMap );
+		zooKeeperClientConnectionMapOfCluster.put(Integer.valueOf(clusterId), connectionMap );
 	}
 	/** 清空集群信息缓存 */
 	public static void clearZooKeeperClientConnectionMap() {
@@ -225,33 +226,27 @@ public class GlobalInstance {
 	
 	/** 根据clusterId获取集群信息 */
 	public static ZooKeeperCluster getZooKeeperClusterByClusterId( int clusterId ) {
-		return zooKeeperClusterMap.get( clusterId );
-	}
-
-	/** 将所有集群的信息返回 */
-	public static Map< Integer/** clusterId */
-	, ZooKeeperCluster > getAllZooKeeperCluster() {
-		return zooKeeperClusterMap;
+		return zooKeeperClusterMap.get(Optional.of(clusterId));
 	}
 
 	/** 按clusterId将集群信息放置到全局变量中去 */
 	public static void putZooKeeperCluster( int clusterId, ZooKeeperCluster zooKeeperCluster ) {
-		zooKeeperClusterMap.put( clusterId, zooKeeperCluster );
+		zooKeeperClusterMap.put(Integer.valueOf(clusterId), zooKeeperCluster );
 	}
 
 	/** 清空集群信息缓存 */
-	public static void clearZooKeeperCluster() {
+	public static void clearAllClusterConfig() {
 		zooKeeperClusterMap.clear();
 	}
 
 	/** 按clusterId将报警配置放置到全局变量中去 */
 	public static void putAlarmSettings( int clusterId, AlarmSettings alarmSettings ) {
-		alarmSettingsMap.put( clusterId, alarmSettings );
+		alarmSettingsMap.put(Integer.valueOf(clusterId), alarmSettings );
 	}
 
 	/** 根据clusterId获取报警配置信息 */
 	public static AlarmSettings getAlarmSettingsByClusterId( int clusterId ) {
-		return alarmSettingsMap.get( clusterId );
+		return alarmSettingsMap.get(Optional.of(clusterId));
 	}
 
 	/** 将所有报警配置的信息返回 */

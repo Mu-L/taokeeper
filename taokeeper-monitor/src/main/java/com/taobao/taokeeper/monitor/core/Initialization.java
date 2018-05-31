@@ -5,18 +5,14 @@ import com.taobao.taokeeper.common.SystemInfo;
 import com.taobao.taokeeper.common.constant.SystemConstant;
 import com.taobao.taokeeper.dao.SettingsDAO;
 import com.taobao.taokeeper.model.TaoKeeperSettings;
-import com.taobao.taokeeper.model.type.Message;
 import com.taobao.taokeeper.monitor.core.task.*;
 import com.taobao.taokeeper.monitor.core.task.runable.ClientThroughputStatJob;
-import com.taobao.taokeeper.monitor.core.task.runable.ClusterConfigLoader;
-import com.taobao.taokeeper.reporter.alarm.TbMessageSender;
 import common.toolkit.constant.BaseConstant;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.ObjectUtil;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.ThreadUtil;
 import common.toolkit.util.db.DbcpUtil;
-import common.toolkit.util.number.IntegerUtil;
 import common.toolkit.util.system.SystemUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,8 +58,6 @@ public class Initialization extends HttpServlet implements Servlet {
 		/** 启动ZooKeeper数据修改通知检测 */
 		ThreadUtil.startThread( new ZooKeeperALiveCheckerJob() );
 
-		/** 启动ZooKeeper集群状态收集 */
-		ThreadUtil.startThread( new ZooKeeperStatusCollectJob() );
 
 		/** 收集机器CPU LOAD MEMEORY */
 		ThreadUtil.startThread( new HostPerformanceCollectTask() );
@@ -120,15 +114,11 @@ public class Initialization extends HttpServlet implements Servlet {
 		DbcpUtil.characterEncoding = StringUtil.defaultIfBlank( properties.getProperty( "dbcp.characterEncoding" ), "UTF-8" );
 		DbcpUtil.username = StringUtil.trimToEmpty( properties.getProperty( "dbcp.username" ) );
 		DbcpUtil.password = StringUtil.trimToEmpty( properties.getProperty( "dbcp.password" ) );
-		DbcpUtil.maxActive = IntegerUtil.defaultIfError( properties.getProperty( "dbcp.maxActive" ), 30 );
-		DbcpUtil.maxIdle = IntegerUtil.defaultIfError( properties.getProperty( "dbcp.maxIdle" ), 10 );
-		DbcpUtil.maxWait = IntegerUtil.defaultIfError( properties.getProperty( "dbcp.maxWait" ), 10000 );
 
 		SystemConstant.dataStoreBasePath = StringUtil.defaultIfBlank( properties.getProperty( "SystemConstent.dataStoreBasePath" ),
 				"/home/yinshi.nc/taokeeper-monitor/" );
 		SystemConstant.userNameOfSSH = StringUtil.defaultIfBlank( properties.getProperty( "SystemConstant.userNameOfSSH" ), "admin" );
 		SystemConstant.passwordOfSSH = StringUtil.defaultIfBlank( properties.getProperty( "SystemConstant.passwordOfSSH" ), "123456" );
-		SystemConstant.portOfSSH = IntegerUtil.defaultIfError( properties.getProperty( "SystemConstant.portOfSSH" ), 22 );
 
 		SystemConstant.IP_OF_MESSAGE_SEND = StringUtil.trimToEmpty( properties.getProperty( "SystemConstant.IP_OF_MESSAGE_SEND" ) );
 

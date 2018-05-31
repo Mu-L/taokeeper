@@ -20,21 +20,26 @@ import com.taobao.taokeeper.dao.ZooKeeperClusterDAO;
 import com.taobao.taokeeper.model.AlarmSettings;
 import com.taobao.taokeeper.model.ZooKeeperCluster;
 import com.taobao.taokeeper.monitor.core.ThreadPoolManager;
-import com.taobao.taokeeper.monitor.core.task.runable.ServerMonitorTask;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.DateUtil;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.ThreadUtil;
 /**
- * Description: Collect info of zookeeper by jmx.
- * 
+ * All ZooKeeper cluster monitor.
+ *cluster1</br>
+ *    server1</br>
+ *     server2</br>
+ *cluster2</br>
+ *     server1</br>
+ *     server2</br>
+ *...
  * @author yinshi.nc
  * @Date 2011-10-28
  */
 @Component
-public class ZooKeeperStatusCollectJob implements Runnable {
+public class ZooKeeperStatusMonitor implements Runnable {
 
-	private static final Logger LOG = LoggerFactory.getLogger( ZooKeeperStatusCollectJob.class );
+	private static final Logger LOG = LoggerFactory.getLogger( ZooKeeperStatusMonitor.class );
 
 	private boolean isFirst = true;
 
@@ -59,10 +64,13 @@ public class ZooKeeperStatusCollectJob implements Runnable {
 			}
 
 			try {
-				AlarmSettings alarmSettings = null;
 				try {
 					List< ZooKeeperCluster > zooKeeperClusterSet = null;
 					Map< Integer, ZooKeeperCluster > zooKeeperClusterMap = GlobalInstance.getAllZooKeeperCluster();
+
+                    zooKeeperClusterDAO.get
+
+
 					if ( null == zooKeeperClusterMap ) {
 						zooKeeperClusterSet = zooKeeperClusterDAO.getAllDetailZooKeeperCluster();
 					} else {
@@ -85,10 +93,10 @@ public class ZooKeeperStatusCollectJob implements Runnable {
 									
 									//这里插入一个任务
 									if( isFirst ){
-										ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ServerMonitorTask( ip, port, alarmSettings, zookeeperCluster, false ) );
-										isFirst = false;
+										//ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ServerMonitorTask( ip, port, alarmSettings, zookeeperCluster, false ) );
+										//isFirst = false;
 									}else{
-										ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ServerMonitorTask( ip, port, alarmSettings, zookeeperCluster, true ) );
+										//ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ServerMonitorTask( ip, port, alarmSettings, zookeeperCluster, true ) );
 									}
 								}// for each server
 							}// for each cluster

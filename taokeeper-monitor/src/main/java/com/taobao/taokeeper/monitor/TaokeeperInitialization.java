@@ -13,50 +13,23 @@ import common.toolkit.util.system.SystemUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.stereotype.Component;
 
 import java.util.Properties;
 
-@SpringBootApplication
-@ComponentScan(basePackages = {
-        "com.taobao.taokeeper.monitor",
-        "com.taobao.taokeeper.dao.impl",
-        "com.taobao.taokeeper.monitor.web"
-})
-public class TaokeeperMonitorApplication {
-    private static final Logger LOG = LoggerFactory.getLogger( TaokeeperMonitorApplication.class );
+@Component
+public class TaokeeperInitialization {
+    private static final Logger LOG = LoggerFactory.getLogger( TaokeeperInitialization.class );
 
-    private static ApplicationContext staticApplicationContext;
-    private static ThreadPoolManager staticThreadPoolManager;
-
+    @Autowired
+    private  ApplicationContext applicationContext;
+    @Autowired
+    private  ThreadPoolManager threadPoolManager;
     @Autowired
     private ZooKeeperStatusMonitor zooKeeperStatusMonitor;
 
-    @Autowired
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        staticApplicationContext = applicationContext;
-    }
-
-    @Autowired
-    public void setThreadPoolManager(ThreadPoolManager threadPoolManager) {
-        staticThreadPoolManager = threadPoolManager;
-    }
-
-
-    public static void main(String[] args) {
-
-        SpringApplication.run(TaokeeperMonitorApplication.class, args);
-        initSystem();
-    }
-
-
-    /**
-     * 从数据库加载并初始化系统配置
-     */
-    static void initSystem() {
+    public void init() {
         LOG.info( "=================================Start to init system===========================" );
         Properties properties = null;
         try {
@@ -92,9 +65,6 @@ public class TaokeeperMonitorApplication {
 //        ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( "银时", "TaoKeeper启动", "TaoKeeper启动",
 //                Message.MessageType.WANGWANG ) ) );
 
-
-        ClusterConfigLoader newLoader = staticApplicationContext.getBean(ClusterConfigLoader.class);
-        staticThreadPoolManager.addJobToZKClusterDumperExecutor(newLoader);
 
         /** 启动ZooKeeper集群状态收集 */
         ThreadUtil.startThread(zooKeeperStatusMonitor);

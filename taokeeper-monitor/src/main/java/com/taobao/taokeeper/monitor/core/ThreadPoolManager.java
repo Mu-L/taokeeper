@@ -3,7 +3,6 @@ package com.taobao.taokeeper.monitor.core;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.taobao.taokeeper.monitor.core.task.runable.ClusterConfigLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory;
  * @Date Dec 25, 2011
  */
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @Component
 public class ThreadPoolManager {

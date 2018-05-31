@@ -1,5 +1,6 @@
 package com.taobao.taokeeper.dao;
 import java.util.List;
+import java.util.Map;
 
 import com.taobao.taokeeper.model.ZooKeeperCluster;
 import common.toolkit.exception.DaoException;
@@ -16,8 +17,10 @@ public interface ZooKeeperClusterDAO {
 	public ZooKeeperCluster getZooKeeperClusterByCulsterId( int clusterId )throws DaoException;
 	
 	public List<ZooKeeperCluster> getAllDetailZooKeeperCluster( )throws DaoException;
-	
-	/** 获取所有clusterid name*/
+
+    public Map<Integer, ZooKeeperCluster> getAllCluster( )throws DaoException;
+
+    /** 获取所有clusterid name*/
 	public List<ZooKeeperCluster> getAllZooKeeperClusterIdAndName( )throws DaoException;
 	
 	
