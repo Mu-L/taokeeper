@@ -52,7 +52,7 @@ public class HostPerformanceCollectTask implements Runnable {
 				AlarmSettingsDAO alarmSettingsDAO = ( AlarmSettingsDAO ) wac.getBean( "alarmSettingsDAO" );
 				try {
 					List< ZooKeeperCluster > zooKeeperClusterSet = null;
-					Map< Integer, ZooKeeperCluster > zooKeeperClusterMap = GlobalInstance.getAllZooKeeperCluster();
+					Map< Integer, ZooKeeperCluster > zooKeeperClusterMap = zooKeeperClusterDAO.getAllCluster();
 					if ( null == zooKeeperClusterMap ) {
 						zooKeeperClusterSet = zooKeeperClusterDAO.getAllDetailZooKeeperCluster();
 					} else {

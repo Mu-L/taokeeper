@@ -51,7 +51,7 @@ public class ZooKeeperALiveCheckerJob implements Runnable {
 				AlarmSettingsDAO alarmSettingsDAO = ( AlarmSettingsDAO ) wac.getBean( "alarmSettingsDAO" );
 				try {
 					List< ZooKeeperCluster > zooKeeperClusterSet = null;
-					Map< Integer, ZooKeeperCluster > zooKeeperClusterMap = GlobalInstance.getAllZooKeeperCluster();
+					Map< Integer, ZooKeeperCluster > zooKeeperClusterMap = zooKeeperClusterDAO.getAllCluster();
 					if ( null == zooKeeperClusterMap ) {
 						zooKeeperClusterSet = zooKeeperClusterDAO.getAllDetailZooKeeperCluster();
 					} else {
@@ -100,7 +100,7 @@ public class ZooKeeperALiveCheckerJob implements Runnable {
 	/**
 	 * 检查存活性，不报警. 这个方法通常是在添加新的zk集群后调用的.
 	 * 
-	 * @param server是一个包含ip的参数
+	 * @param server 是一个包含ip的参数
 	 */
 	public boolean checkAliveNoAlarm( String server ) {
 

@@ -69,10 +69,6 @@ public class ZooKeeperController extends BaseController {
                     isSuccess = true;
                     LOG.info( handleMessage + ": " + zooKeeperCluster );
 
-                    //Update cluster info of memory
-                    ClusterConfigLoader loader = applicationContext.getBean(ClusterConfigLoader.class);
-                    threadPoolManager.addJobToZKClusterDumperExecutor(loader);
-
                     //现在要加入一个默认的报警
                     //alarmSettingsDAO.addAlarmSettings( new AlarmSettings( clusterId, "5", "60", "70", "2", "银时", "15869027928", "yinshi.nc@taobao.com", "200","1000","/home/yinshi.nc","/home/yinshi.nc","70","" ) );
 //
@@ -118,7 +114,7 @@ public class ZooKeeperController extends BaseController {
 		clusterId = StringUtil.defaultIfBlank( clusterId, 1 + EMPTY_STRING );
 
 		try {
-			Map<Integer, ZooKeeperCluster > zooKeeperClusterMap = GlobalInstance.getAllZooKeeperCluster();
+			Map<Integer, ZooKeeperCluster > zooKeeperClusterMap = zooKeeperClusterDAO.getAllCluster();
 			ZooKeeperCluster zooKeeperCluster = zooKeeperClusterMap.get( Integer.parseInt( clusterId ) );
 			if( null == zooKeeperCluster ){
 				zooKeeperCluster = zooKeeperClusterDAO.getZooKeeperClusterByCulsterId( Integer.parseInt( clusterId) );
@@ -169,10 +165,6 @@ public class ZooKeeperController extends BaseController {
                 if( zooKeeperClusterDAO.updateZooKeeperSettingsByClusterId( zooKeeperCluster ) ){
                     handleMessage = "Update ZooKeeper settings success.";
                     LOG.info( handleMessage + "：" + zooKeeperCluster );
-
-                    //Update zk cluster config info of memory
-                    ClusterConfigLoader _clusterConfigLoader = applicationContext.getBean(ClusterConfigLoader.class);
-                    threadPoolManager.addJobToZKClusterDumperExecutor(_clusterConfigLoader);
 
                     LOG.info( "Update ZooKeeper settings of chache." );
                 }else{

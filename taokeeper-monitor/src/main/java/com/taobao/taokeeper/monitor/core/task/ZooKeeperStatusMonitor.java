@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.taobao.taokeeper.monitor.core.task.runable.ServerMonitorTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,13 +26,13 @@ import common.toolkit.util.DateUtil;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.ThreadUtil;
 /**
- * All ZooKeeper cluster monitor.
- *cluster1</br>
- *    server1</br>
- *     server2</br>
+ * All ZooKeeper cluster monitor<br/>
+ *cluster1<br/>
+ *--server1</br>
+ *--server2</br>
  *cluster2</br>
- *     server1</br>
- *     server2</br>
+ *--server1</br>
+ *--server2</br>
  *...
  * @author yinshi.nc
  * @Date 2011-10-28
@@ -63,59 +64,42 @@ public class ZooKeeperStatusMonitor implements Runnable {
 				continue;
 			}
 
-			try {
-				try {
-					List< ZooKeeperCluster > zooKeeperClusterSet = null;
-					Map< Integer, ZooKeeperCluster > zooKeeperClusterMap = GlobalInstance.getAllZooKeeperCluster();
+            List< ZooKeeperCluster > zooKeeperClusterSet = null;
+            Map< Integer, ZooKeeperCluster > zooKeeperClusterMap = null;
+            try {
+                zooKeeperClusterMap = zooKeeperClusterDAO.getAllCluster();
+            } catch (DaoException e) {
+                LOG.error( "Error when get all cluster from db due to " + e.getMessage(),e );
+            }
 
-                    zooKeeperClusterDAO.get
+            if ( null == zooKeeperClusterMap || zooKeeperClusterMap.isEmpty() ) {
+                LOG.info( "Skip server monitor due to no zookeeper cluster" );
+            } else {
+                for ( Integer clusterId : zooKeeperClusterMap.keySet() ) { // handle each cluster
 
+                    ZooKeeperCluster zookeeperCluster = zooKeeperClusterMap.get(clusterId);
+                    if ( null != zookeeperCluster && null != zookeeperCluster.getServerList() ) {
 
-					if ( null == zooKeeperClusterMap ) {
-						zooKeeperClusterSet = zooKeeperClusterDAO.getAllDetailZooKeeperCluster();
-					} else {
-						zooKeeperClusterSet = new ArrayList< ZooKeeperCluster >();
-						zooKeeperClusterSet.addAll( zooKeeperClusterMap.values() );
-					}
+                        for ( String server : zookeeperCluster.getServerList() ) { //handle each server
+                            if ( StringUtil.isBlank( server ) )
+                                continue;
+                            String ip = StringUtil.trimToEmpty( server.split( COLON )[0] );
+                            String port = StringUtil.trimToEmpty( server.split( COLON )[1] );
 
-					if ( null == zooKeeperClusterSet || zooKeeperClusterSet.isEmpty() ) {
-						LOG.warn( "No zookeeper cluster" );
-					} else {
-						for ( ZooKeeperCluster zookeeperCluster : zooKeeperClusterSet ) { // 对每个cluster处理
-							alarmSettings = alarmSettingsDAO.getAlarmSettingsByCulsterId( zookeeperCluster.getClusterId() );
-							if ( null != zookeeperCluster && null != zookeeperCluster.getServerList() ) {
+                            threadPoolManager.addTaskToServerMonitorExecutor(new ServerMonitorTask(ip,port));
+                        }
+                    }
+                }
+            }
+            LOG.info( "Finish all cluster monitor" );
+            GlobalInstance.timeOfUpdateZooKeeperStatusSet = DateUtil.convertDate2String( new Date() );
 
-								for ( String server : zookeeperCluster.getServerList() ) {
-									if ( StringUtil.isBlank( server ) )
-										continue;
-									String ip = StringUtil.trimToEmpty( server.split( COLON )[0] );
-									String port = StringUtil.trimToEmpty( server.split( COLON )[1] );
-									
-									//这里插入一个任务
-									if( isFirst ){
-										//ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ServerMonitorTask( ip, port, alarmSettings, zookeeperCluster, false ) );
-										//isFirst = false;
-									}else{
-										//ThreadPoolManager.addJobToZKServerStatusCollectorExecutor( new ServerMonitorTask( ip, port, alarmSettings, zookeeperCluster, true ) );
-									}
-								}// for each server
-							}// for each cluster
-						}
-					}
-					LOG.info( "Finish all cluster status collect" );
-					GlobalInstance.timeOfUpdateZooKeeperStatusSet = DateUtil.convertDate2String( new Date() );
-				} catch ( DaoException daoException ) {
-					LOG.warn( "Error when handle data base" + daoException.getMessage() );
-				} catch ( Exception e ) {
-					LOG.error( "程序出错:" + e.getMessage() );
-					e.printStackTrace();
-				}
-				// 每2分钟收集一次检测
-				Thread.sleep( 1000 * 60 * MINS_RATE_OF_COLLECT_ZOOKEEPER );
-			} catch ( Throwable e ) {
-				e.printStackTrace();
-			}
-		}
+            try {
+                Thread.sleep( 1000 * 60 * MINS_RATE_OF_COLLECT_ZOOKEEPER );
+            } catch (InterruptedException e) {
+                //
+            }
+        }
 	}
 
 	

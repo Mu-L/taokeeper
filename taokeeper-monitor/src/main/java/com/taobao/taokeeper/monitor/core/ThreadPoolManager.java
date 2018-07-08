@@ -21,7 +21,7 @@ public class ThreadPoolManager {
 
 	private static int SIZE_OF_ZKNODEALIVECHECK_EXECUTOR = 5;
 	private static int SIZE_OF_MESSAGESEND_EXECUTOR = 5;
-	private static int SIZE_OF_ZKSERVERSTATUS_COLLECTOR_EXECUTOR = 3;
+	private static final int Thread_Num_Of_Server_Monitor_Executor = 5;
 	private static int SIZE_OF_ZKSERVERPERFORMAN_CECOLLECTOR_EXECUTOR = 3;
 	private static int SIZE_OF_ZKCLUSTERCONFIG_DUMPER_EXECUTOR = 2;
 	
@@ -31,7 +31,7 @@ public class ThreadPoolManager {
 			LOG.info( "Start init ThreadPoolManager..." );
 			zooKeeperNodeAliveCheckExecutor 	 = Executors.newFixedThreadPool( SIZE_OF_ZKNODEALIVECHECK_EXECUTOR );
 			messageSendExecutor             	 = Executors.newFixedThreadPool( SIZE_OF_MESSAGESEND_EXECUTOR );
-			zkServerStatusCollectorExecutor 	 = Executors.newFixedThreadPool( SIZE_OF_ZKSERVERSTATUS_COLLECTOR_EXECUTOR );
+            serverMonitorExecutor 	             = Executors.newFixedThreadPool( Thread_Num_Of_Server_Monitor_Executor );
 			zkServerPerformanceCollectorExecutor = Executors.newFixedThreadPool( SIZE_OF_ZKSERVERPERFORMAN_CECOLLECTOR_EXECUTOR );
 			zkClusterConfigDumperExecutor 		 = Executors.newFixedThreadPool( SIZE_OF_ZKCLUSTERCONFIG_DUMPER_EXECUTOR );
 		}
@@ -54,10 +54,10 @@ public class ThreadPoolManager {
 	}
 	
 	/** 收集ZKServer状态信息 线程池 */
-	private static ExecutorService zkServerStatusCollectorExecutor;
-	public void addJobToZKServerStatusCollectorExecutor( Runnable command ){
+	private static ExecutorService serverMonitorExecutor;
+	public void addTaskToServerMonitorExecutor( Runnable command ){
 		init();
-		zkServerStatusCollectorExecutor.execute( command );
+        serverMonitorExecutor.execute( command );
 	}
 	
 	

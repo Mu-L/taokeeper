@@ -32,7 +32,7 @@ public class AlarmSettingsController extends BaseController {
 		clusterId = StringUtil.defaultIfBlank( clusterId, 1 + EMPTY_STRING );
 		
 		try {
-			Map<Integer, ZooKeeperCluster > zooKeeperClusterMap = GlobalInstance.getAllZooKeeperCluster();
+			Map<Integer, ZooKeeperCluster > zooKeeperClusterMap = zooKeeperClusterDAO.getAllCluster();
 			Map<Integer, AlarmSettings > alarmSettingsMap = GlobalInstance.getAllAlarmSettings();
 			AlarmSettings alarmSettings = GlobalInstance.getAlarmSettingsByClusterId( Integer.parseInt( clusterId ) );
 			if( null == alarmSettings ){

@@ -29,20 +29,12 @@ import java.util.Properties;
 public class TaokeeperMonitorApplication {
     private static final Logger LOG = LoggerFactory.getLogger( TaokeeperMonitorApplication.class );
 
-    private static ApplicationContext staticApplicationContext;
-    private static ThreadPoolManager staticThreadPoolManager;
-
-    @Autowired
+    private static ZooKeeperStatusMonitor staticZooKeeperStatusMonitor;
     private ZooKeeperStatusMonitor zooKeeperStatusMonitor;
 
     @Autowired
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        staticApplicationContext = applicationContext;
-    }
-
-    @Autowired
-    public void setThreadPoolManager(ThreadPoolManager threadPoolManager) {
-        staticThreadPoolManager = threadPoolManager;
+    public void setZooKeeperStatusMonitor(ZooKeeperStatusMonitor zooKeeperStatusMonitor){
+        staticZooKeeperStatusMonitor = zooKeeperStatusMonitor;
     }
 
 
@@ -93,11 +85,8 @@ public class TaokeeperMonitorApplication {
 //                Message.MessageType.WANGWANG ) ) );
 
 
-        ClusterConfigLoader newLoader = staticApplicationContext.getBean(ClusterConfigLoader.class);
-        staticThreadPoolManager.addJobToZKClusterDumperExecutor(newLoader);
-
         /** 启动ZooKeeper集群状态收集 */
-        ThreadUtil.startThread(zooKeeperStatusMonitor);
+        ThreadUtil.startThread( staticZooKeeperStatusMonitor );
 
     }
 }

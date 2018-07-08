@@ -34,7 +34,7 @@ public class HostPerformanceController extends BaseController {
 		clusterId = StringUtil.defaultIfBlank( clusterId, 1 + EMPTY_STRING );
 		
 		try {
-			Map<Integer, ZooKeeperCluster > zooKeeperClusterMap = GlobalInstance.getAllZooKeeperCluster();
+			Map<Integer, ZooKeeperCluster > zooKeeperClusterMap = zooKeeperClusterDAO.getAllCluster();
 			ZooKeeperCluster zooKeeperCluster = GlobalInstance.getZooKeeperClusterByClusterId( Integer.parseInt( clusterId) );
 			Map<String, HostPerformanceEntity> hostPerformanceEntityMap = new HashMap< String, HostPerformanceEntity >();
 			if( null == zooKeeperCluster ){

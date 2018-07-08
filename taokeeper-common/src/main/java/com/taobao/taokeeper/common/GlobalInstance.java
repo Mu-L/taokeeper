@@ -41,7 +41,7 @@ public class GlobalInstance {
 	
 
 	// ZooKeeper集群中每台机器状态信息
-	private static Map< String/** IP */
+	private static Map< String/** ip:port */
 	, ZooKeeperStatusV2 > zooKeeperStatusSet = new ConcurrentHashMap< String, ZooKeeperStatusV2 >();
 	// 节点自检结果 0:不确定 1:OK 2: ERROR
 	private static Map< String/** IP */

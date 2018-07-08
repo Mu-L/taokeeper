@@ -27,7 +27,7 @@ public class TaokeeperInitialization {
     @Autowired
     private  ThreadPoolManager threadPoolManager;
     @Autowired
-    private ZooKeeperStatusMonitor zooKeeperStatusMonitor;
+    private ZooKeeperStatusMonitor zookeeperStatusMonitor;
 
     public void init() {
         LOG.info( "=================================Start to init system===========================" );
@@ -67,7 +67,7 @@ public class TaokeeperInitialization {
 
 
         /** 启动ZooKeeper集群状态收集 */
-        ThreadUtil.startThread(zooKeeperStatusMonitor);
+        ThreadUtil.startThread(zookeeperStatusMonitor);
 
     }
 }

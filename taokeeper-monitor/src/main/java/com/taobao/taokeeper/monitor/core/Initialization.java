@@ -41,9 +41,6 @@ public class Initialization extends HttpServlet implements Servlet {
 
 		initSystem();
 
-		// Start the job of dump db info to memeory
-		Thread zooKeeperClusterMapDumpJobThread = new Thread( new ZooKeeperClusterMapDumpJob() );
-		zooKeeperClusterMapDumpJobThread.start();
 		try {
 			// 这里等待一下，因为第一次一定要dump成功，
 			// TODO 这个等待逻辑要改。

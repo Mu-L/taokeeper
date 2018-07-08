@@ -45,7 +45,7 @@ import static common.toolkit.constant.HtmlTagConstant.BR;
  * @author 银时(nileader) yinshi.nc@taobao.com
  * @Date Dec 26, 2019
  */
-public class ServerMonitorTask implements Runnable {
+public class ServerMonitorTask implements Runnable{
 
     private static final Logger LOG = LoggerFactory.getLogger( ServerMonitorTask.class );
 
@@ -65,22 +65,16 @@ public class ServerMonitorTask implements Runnable {
 
     private String ip;
     private String port;
-    private AlarmSettings alarmSettings;
-    private ZooKeeperCluster zookeeperCluster;
     private boolean needStoreToDB;
 
-    public ServerMonitorTask(String ip, String port, AlarmSettings alarmSettings, ZooKeeperCluster zookeeperCluster ) {
+    public ServerMonitorTask(String ip, String port) {
         this.ip = ip;
         this.port = port;
-        this.alarmSettings = alarmSettings;
-        this.zookeeperCluster = zookeeperCluster;
         this.needStoreToDB = true;
     }
-    public ServerMonitorTask(String ip, String port, AlarmSettings alarmSettings, ZooKeeperCluster zookeeperCluster, boolean needStoreToDB ) {
+    public ServerMonitorTask(String ip, String port, boolean needStoreToDB ) {
         this.ip = ip;
         this.port = port;
-        this.alarmSettings = alarmSettings;
-        this.zookeeperCluster = zookeeperCluster;
         this.needStoreToDB = needStoreToDB;
     }
 
@@ -88,7 +82,7 @@ public class ServerMonitorTask implements Runnable {
     public void run() {
         try {
 
-            if( StringUtil.isBlank( ip ) || StringUtil.isBlank( port ) || ObjectUtil.isBlank( alarmSettings, zookeeperCluster ) ){
+            if( StringUtil.isBlank( ip ) || StringUtil.isBlank( port ) ){
                 return;
             }
             ZooKeeperStatusV2 zooKeeperStatus = new ZooKeeperStatusV2();
@@ -106,7 +100,7 @@ public class ServerMonitorTask implements Runnable {
             //sshZooKeeperAndHandleWchc( ip, Integer.parseInt( port ), zooKeeperStatus, zookeeperCluster.getClusterId() );
             //sshZooKeeperAndHandleRwps( ip, Integer.parseInt( port ), (ZooKeeperStatusV2)zooKeeperStatus, zookeeperCluster.getClusterId() );
             //checkAndAlarm( alarmSettings, zooKeeperStatus, zookeeperCluster.getClusterName() );
-            //GlobalInstance.putZooKeeperStatus( ip+":"+port, zooKeeperStatus );
+            GlobalInstance.putZooKeeperStatus( ip+":"+port, zooKeeperStatus );
             //Store taokeeper stat to DB
 //            if( needStoreToDB ){
 //                storeTaoKeeperStatToDB( zookeeperCluster.getClusterId(), (ZooKeeperStatusV2)zooKeeperStatus );
@@ -162,6 +156,7 @@ public class ServerMonitorTask implements Runnable {
                 }
                 sb.append( line ).append( "<br/>" );
             }
+            已经获取了stat命令的返回值，检查下内容是否正确
             zooKeeperStatus.setClientConnectionList( clientConnectionList );
             zooKeeperStatus.setStatContent( sb.toString() );
         } finally {

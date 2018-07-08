@@ -70,7 +70,11 @@ public class ZooKeeperStatusController extends BaseController {
         model.addAttribute("zooKeeperStatusMap", zooKeeperStatusMap);
         model.addAttribute("zooKeeperCluster", zooKeeperCluster);
         model.addAttribute("handleMessage", handleMessage);
-        model.addAttribute("zooKeeperClusterMap", GlobalInstance.getAllZooKeeperCluster() );
+        try {
+            model.addAttribute("zooKeeperClusterMap", zooKeeperClusterDAO.getAllCluster() );
+        } catch (DaoException e) {
+            throw new RuntimeException(e);
+        }
         model.addAttribute( "timeOfUpdateZooKeeperStatusSet", GlobalInstance.timeOfUpdateZooKeeperStatusSet );
         //model.put("clusterRTStatsMap", ZooKeeperRTCollectJob.getRtStatus().get(zooKeeperCluster.getClusterId()));
         //model.put("clusterRTStats", ZooKeeperRTCollectJob.getClustRTStatus().get(zooKeeperCluster.getClusterId()));

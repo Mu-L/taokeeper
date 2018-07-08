@@ -49,7 +49,7 @@ public class ZooKeeperRTCollectJob extends TimerTask {
     private List<ZooKeeperCluster> getMonitorCluster() throws DaoException {
         ZooKeeperClusterDAO zooKeeperClusterDAO = (ZooKeeperClusterDAO) wac.getBean("zooKeeperClusterDAO");
 
-        Map<Integer, ZooKeeperCluster> zooKeeperClusterMap = GlobalInstance.getAllZooKeeperCluster();
+        Map<Integer, ZooKeeperCluster> zooKeeperClusterMap = zooKeeperClusterDAO.getAllCluster();
 
         List<ZooKeeperCluster> zooKeeperClusterSet = null;
 

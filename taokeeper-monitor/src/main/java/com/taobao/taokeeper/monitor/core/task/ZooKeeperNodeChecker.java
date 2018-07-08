@@ -27,8 +27,7 @@ import common.toolkit.util.collection.CollectionUtil;
 import common.toolkit.util.collection.ListUtil;
 /**
  * Description: ZK节点的Path检查<br>
- * 啊！！！添加这个类的时候，距离taokeeper开始开发已经一年时间了，哎。时间过得真快，又要大一岁了，悲剧！
- * @author 银时 yinshi.nc@taobao.com
+ * @author 银时(nileader) yinshi.nc@taobao.com
  * @date 2012-10-22
  */
 public class ZooKeeperNodeChecker extends TimerTask{
@@ -56,7 +55,7 @@ public class ZooKeeperNodeChecker extends TimerTask{
 				ZooKeeperClusterDAO zooKeeperClusterDAO = ( ZooKeeperClusterDAO ) wac.getBean( "zooKeeperClusterDAO" );
 				try {
 					List< ZooKeeperCluster > zooKeeperClusterSet = null;
-					Map< Integer, ZooKeeperCluster > zooKeeperClusterMap = GlobalInstance.getAllZooKeeperCluster();
+					Map< Integer, ZooKeeperCluster > zooKeeperClusterMap = zooKeeperClusterDAO.getAllCluster();
 					if ( null == zooKeeperClusterMap ) {
 						zooKeeperClusterSet = zooKeeperClusterDAO.getAllDetailZooKeeperCluster();
 					} else {
