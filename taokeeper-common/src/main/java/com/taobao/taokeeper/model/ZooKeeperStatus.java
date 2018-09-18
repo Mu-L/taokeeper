@@ -14,8 +14,10 @@ import common.toolkit.util.StringUtil;
  * @Date 2011-10-28
  */
 public class ZooKeeperStatus {
-	
-	private String ip;
+
+    //ip:port
+	private String server;
+
 	private List< String > clientConnectionList;
 	private Map< String,Connection > connections;
 	@SuppressWarnings("unused")
@@ -37,12 +39,12 @@ public class ZooKeeperStatus {
 	private String watchedPathMapContent;
 
 	
-	public String getIp() {
-		return ip;
+	public String getServer() {
+		return server;
 	}
 
-	public void setIp( String ip ) {
-		this.ip = ip;
+	public void setServer(String ip ) {
+		this.server = server;
 	}
 
 	public boolean isLeader() {
@@ -150,7 +152,7 @@ public class ZooKeeperStatus {
 	
 	@Override
 	public String toString() {
-		return "ZooKeeperStatus[ip: " + ip + ", isLeader: " + isLeader + ", nodeCount: " + nodeCount + ", "
+		return "ZooKeeperStatus[Server: " + server + ", isLeader: " + isLeader + ", nodeCount: " + nodeCount + ", "
 				+ connections + " 个客户端连接" + "在" + watchedPaths + "个path上注册了" + watches + "个watch" + clientConnectionList;
 	}
 	

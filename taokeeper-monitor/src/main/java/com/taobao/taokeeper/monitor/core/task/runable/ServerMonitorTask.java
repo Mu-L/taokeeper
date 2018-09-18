@@ -8,14 +8,12 @@ import com.taobao.taokeeper.dao.ReportDAO;
 import com.taobao.taokeeper.model.*;
 import common.toolkit.entity.DateFormat;
 import common.toolkit.entity.io.Connection;
-import common.toolkit.entity.io.SSHResource;
 import common.toolkit.exception.DaoException;
 import common.toolkit.exception.SSHException;
 import common.toolkit.util.DateUtil;
 import common.toolkit.util.ObjectUtil;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.collection.MapUtil;
-import common.toolkit.util.io.IOUtil;
 import common.toolkit.util.io.SSHUtil;
 import common.toolkit.util.io.SocketCommandUtils;
 import org.slf4j.Logger;
@@ -95,7 +93,7 @@ public class ServerMonitorTask implements Runnable{
             }
 
 
-
+            next,make  telnetZooKeeperAndHandleWchs work
             //telnetZooKeeperAndHandleWchs( ip, Integer.parseInt( port ), zooKeeperStatus );
             //sshZooKeeperAndHandleWchc( ip, Integer.parseInt( port ), zooKeeperStatus, zookeeperCluster.getClusterId() );
             //sshZooKeeperAndHandleRwps( ip, Integer.parseInt( port ), (ZooKeeperStatusV2)zooKeeperStatus, zookeeperCluster.getClusterId() );
@@ -135,7 +133,7 @@ public class ServerMonitorTask implements Runnable{
              * Outstanding: 0 Zxid: 0xc00000243 Mode: follower Node count: 8
              */
             List< String > clientConnectionList = new ArrayList< String >();
-            zooKeeperStatus.setIp(ip);
+            zooKeeperStatus.setServer(ip+":"+port);
             while ((line = reader.readLine()) != null) {
                 if ( analyseLineIfClientConnection( line ) ) { // 检查是否是客户端连接
                     clientConnectionList.add( line );
@@ -156,7 +154,7 @@ public class ServerMonitorTask implements Runnable{
                 }
                 sb.append( line ).append( "<br/>" );
             }
-            已经获取了stat命令的返回值，检查下内容是否正确
+            //已经获取了stat命令的返回值，检查下内容是否正确
             zooKeeperStatus.setClientConnectionList( clientConnectionList );
             zooKeeperStatus.setStatContent( sb.toString() );
         } finally {
@@ -455,7 +453,7 @@ public class ServerMonitorTask implements Runnable{
 
                 if ( Integer.parseInt( maxConnectionPerIp ) < connectionsPerIp ) {
                     needAlarm = true;
-                    sb.append( zooKeeperStatus.getIp() + " 上的连接数达到了: " + connectionsPerIp + ", 超过设置的报警阀值: " + maxConnectionPerIp + ".  " );
+                    sb.append( zooKeeperStatus.getServer() + " 上的连接数达到了: " + connectionsPerIp + ", 超过设置的报警阀值: " + maxConnectionPerIp + ".  " );
                 }
             }
 
@@ -463,7 +461,7 @@ public class ServerMonitorTask implements Runnable{
                 int watchesPerIp = zooKeeperStatus.getWatches();
                 if ( Integer.parseInt( maxWatchPerIp ) < watchesPerIp ) {
                     needAlarm = true;
-                    sb.append( zooKeeperStatus.getIp() + " 上的Watch数达到了: " + watchesPerIp + ", 超过设置的报警阀值: " + maxWatchPerIp + ".  " );
+                    sb.append( zooKeeperStatus.getServer() + " 上的Watch数达到了: " + watchesPerIp + ", 超过设置的报警阀值: " + maxWatchPerIp + ".  " );
                 }
             }
 
@@ -507,7 +505,7 @@ public class ServerMonitorTask implements Runnable{
             }
 
             reportDAO.addTaoKeeperStat( new TaoKeeperStat( clusterId,
-                    zooKeeperStatus.getIp(),
+                    zooKeeperStatus.getServer(),
                     DateUtil.getNowTime( DateFormat.DateTime ),
                     DateUtil.getNowTime( DateFormat.Date ),
                     MapUtil.size( zooKeeperStatus.getConnections() ),
