@@ -36,7 +36,7 @@ public class SystemConstant {
 
     public final static String COMMAND_CONS = "echo cons | nc {0} {1}";
 	public final static String COMMAND_STAT = "stat";
-	public final static String COMMAND_WCHS = "echo wchs | nc {0} {1}";
+	public final static String COMMAND_WCHS = "wchs";
 	public final static String COMMAND_WCHC = "echo wchc | nc {0} {1}";
 	public final static String COMMAND_RWPS = "echo rwps | nc {0} {1}";
 

@@ -16,27 +16,27 @@ import common.toolkit.util.StringUtil;
 public class ZooKeeperStatus {
 
     //ip:port
-	private String server;
+	private String server = "N/A";
 
 	private List< String > clientConnectionList;
 	private Map< String,Connection > connections;
 	@SuppressWarnings("unused")
-	private String connectionsContent;
+	private String connectionsContent = "N/A";
 	/** watch nums */
-	private int watches;
-	private int watchedPaths;
+	private int watches = -1;
+	private int watchedPaths = -1;
 	private boolean isLeader;
-	private String mode;
-	private long nodeCount;
-	private String statContent;
-	/** 0:不确定 1:OK 2: ERROR*/
-	private int statusType = 0;
+	private String mode = "N/A";
+	private long nodeCount = -1;
+	private String statContent = "N/A";
+	/** -1:init value 1:OK 2: ERROR*/
+	private int statusType = -1;
 
-	private String sent;
-	private String Received;
+	private String sent ="N/A";
+	private String Received = "N/A";
 	
 	private Map<String/**session id*/, List<String> /** watched path list */ > watchedPathMap;
-	private String watchedPathMapContent;
+	private String watchedPathMapContent = "N/A";
 
 	
 	public String getServer() {

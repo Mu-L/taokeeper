@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.taobao.taokeeper.common.GlobalInstance;
 import com.taobao.taokeeper.common.constant.SystemConstant;
+import com.taobao.taokeeper.common.util.ZooKeeperUtil;
 import com.taobao.taokeeper.dao.ReportDAO;
 import com.taobao.taokeeper.model.*;
 import common.toolkit.entity.DateFormat;
@@ -80,25 +81,41 @@ public class ServerMonitorTask implements Runnable{
     public void run() {
         try {
 
-            if( StringUtil.isBlank( ip ) || StringUtil.isBlank( port ) ){
+            if ( StringUtil.isBlank( ip, port + EMPTY_STRING ) ) {
+                LOG.warn( "IP or port is empty." );
                 return;
             }
-            ZooKeeperStatusV2 zooKeeperStatus = new ZooKeeperStatusV2();
+
+            ZooKeeperStatusV2 zookeeperStatus = new ZooKeeperStatusV2();
+            zookeeperStatus.setServer(ip+":"+port);
 
             try{
-                handleStat( ip, Integer.parseInt( port ), zooKeeperStatus );
+                handleStat( ip, Integer.parseInt( port ), zookeeperStatus );
                 LOG.info("Finish handle ZooKeeper Command[stat] @"+ip+":"+port);
-            }catch ( IOException ioe ){
-                LOG.error("Exception when handle ZooKeeper Command[stat] @"+ip+":"+port,ioe);
+            }catch ( Throwable e ){
+                LOG.error("Exception when handle ZooKeeper Command[stat] @"+ip+":"+port,e);
+            }
+
+            try{
+                handleWchs( ip, Integer.parseInt( port ), zookeeperStatus );
+                LOG.info("Finish handle ZooKeeper Command[wchs] @"+ip+":"+port);
+            }catch ( Throwable e ){
+                LOG.error("Exception when handle ZooKeeper Command[wchs] @"+ip+":"+port,e);
             }
 
 
-            next,make  telnetZooKeeperAndHandleWchs work
-            //telnetZooKeeperAndHandleWchs( ip, Integer.parseInt( port ), zooKeeperStatus );
+            //final Map< String, Connection > consOfServer = GlobalInstance.getZooKeeperClientConnectionMapByClusterIdAndServerIp( ip );
+            //zookeeperStatus.setConnections( consOfServer );
+
+
+
+
+
+
             //sshZooKeeperAndHandleWchc( ip, Integer.parseInt( port ), zooKeeperStatus, zookeeperCluster.getClusterId() );
             //sshZooKeeperAndHandleRwps( ip, Integer.parseInt( port ), (ZooKeeperStatusV2)zooKeeperStatus, zookeeperCluster.getClusterId() );
             //checkAndAlarm( alarmSettings, zooKeeperStatus, zookeeperCluster.getClusterName() );
-            GlobalInstance.putZooKeeperStatus( ip+":"+port, zooKeeperStatus );
+            GlobalInstance.putZooKeeperStatus( ip+":"+port, zookeeperStatus );
             //Store taokeeper stat to DB
 //            if( needStoreToDB ){
 //                storeTaoKeeperStatToDB( zookeeperCluster.getClusterId(), (ZooKeeperStatusV2)zooKeeperStatus );
@@ -133,9 +150,8 @@ public class ServerMonitorTask implements Runnable{
              * Outstanding: 0 Zxid: 0xc00000243 Mode: follower Node count: 8
              */
             List< String > clientConnectionList = new ArrayList< String >();
-            zooKeeperStatus.setServer(ip+":"+port);
             while ((line = reader.readLine()) != null) {
-                if ( analyseLineIfClientConnection( line ) ) { // 检查是否是客户端连接
+                if ( ZooKeeperUtil.analyseLineIfClientConnection( line ) ) { // 检查是否是客户端连接
                     clientConnectionList.add( line );
                 } else if ( line.contains( MODE_FOLLOWER ) ) {
                     zooKeeperStatus.setMode( "F" );
@@ -163,63 +179,27 @@ public class ServerMonitorTask implements Runnable{
         }
     }
 
-    /** 分析一行内容, 判断是否为客户端连接 */
-    private boolean analyseLineIfClientConnection( String line ) {
-        if ( StringUtil.isBlank( line ) ) {
-            return false;
-        }
-        // 标准的一行客户端连接是这样的
-        // /1.2.37.111:43681[1](queued=0,recved=434,sent=434)
-        line = StringUtil.trimToEmpty( line );
-        if ( line.startsWith( "/" ) && StringUtil.containsIp( line ) ) {
-            return true;
-        }
-        return false;
-    }
+
 
     /**
-     * 进行Telnet连接并进行执行wchs。
+     * Exec 4 words command: wchs
      */
-    private void telnetZooKeeperAndHandleWchs( String ip, int port, ZooKeeperStatus zooKeeperStatus ) {
+    private void handleWchs(String ip, int port, ZooKeeperStatus zookeeperStatus ) throws IOException {
 
-        try {
-            if ( StringUtil.isBlank( ip, port + EMPTY_STRING ) ) {
-                LOG.warn( "Ip is empty" );
-                return;
-            }
-            String wchsOutput = SSHUtil.execute( ip, SystemConstant.portOfSSH, userNameOfSSH, passwordOfSSH,
-                    StringUtil.replaceSequenced( COMMAND_WCHS, ip, port + EMPTY_STRING ) );
+        InputStream is = null;
+        BufferedReader reader = null;
+        try{
+            is = SocketCommandUtils.executeSocketCommandAsStream(ip,port,COMMAND_WCHS);
+            reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
 
-            /**
-             * Example: 59 connections watching 161 paths Total watches:405
-             */
-            if ( StringUtil.isBlank( wchsOutput ) ) {
-                LOG.warn( "No output execute " + StringUtil.replaceSequenced( COMMAND_WCHS, ip, port + EMPTY_STRING ) );
-                return;
-            }
+            int[] result = ZooKeeperUtil.parseCommondOfWchs(reader.readLine(),reader.readLine());
 
-            String[] wchsOutputArray = wchsOutput.split( BR );
-            if ( 2 != wchsOutputArray.length ) {
-                LOG.warn( "Illegal output of command " + StringUtil.replaceSequenced( COMMAND_WCHS, ip, port + EMPTY_STRING ) );
-                return;
-            }
-            String firstLine = wchsOutputArray[0].replace( STRING_CONNECTIONS_WATCHING, WORD_SEPARATOR ).replace( STRING_PATHS, EMPTY_STRING );
-            String[] firstLineArray = firstLine.split( WORD_SEPARATOR );
+            zookeeperStatus.setWatchedPaths(result[1]);
+            zookeeperStatus.setWatches(result[2]);
 
-            final Map< String, Connection > consOfServer = GlobalInstance.getZooKeeperClientConnectionMapByClusterIdAndServerIp( ip );
-
-            int watchedPaths = Integer.parseInt( StringUtil.trimToEmpty( firstLineArray[1] ) );
-            zooKeeperStatus.setConnections( consOfServer );
-            zooKeeperStatus.setWatchedPaths( watchedPaths );
-
-            // 分析第二行来获取watches数
-            String secondtLine = wchsOutputArray[1].replace( STRING_TOTAL_WATCHES, EMPTY_STRING );
-            int watches = Integer.parseInt( StringUtil.trimToEmpty( secondtLine ) );
-            zooKeeperStatus.setWatches( watches );
-        } catch ( SSHException e ) {
-            LOG.warn( "Error when telnetZooKeeperAndHandleWchs:[ip:" + ip + ", port:" + port + " ] " + e.getMessage() );
-        } catch ( Exception e ) {
-            LOG.error( "程序出错：" + e.getMessage() );
+        } finally {
+            if(null!=is) is.close();
+            if(null!=reader) reader.close();
         }
     }
 
