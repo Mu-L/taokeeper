@@ -1,5 +1,6 @@
 # ignore files
 .idea
+.vscode
 .project
 .settings/
 taokeeper-monitor/target/

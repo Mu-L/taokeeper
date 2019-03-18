@@ -41,11 +41,9 @@ public class GlobalInstance {
 	
 
 	// ZooKeeper集群中每台机器状态信息
-	private static Map< String/** ip:port */
-	, ZooKeeperStatusV2 > zooKeeperStatusSet = new ConcurrentHashMap< String, ZooKeeperStatusV2 >();
+	private static Map< String/** ip:port */, ZooKeeperStatusV2 > zooKeeperStatusSet = new ConcurrentHashMap< String, ZooKeeperStatusV2 >();
 	// 节点自检结果 0:不确定 1:OK 2: ERROR
-	private static Map< String/** IP */
-	, Integer > zooKeeperStatusTypeSet = new ConcurrentHashMap< String, Integer >();
+	private static Map< String/** ip:port */, Integer > selfCheckResultSet = new ConcurrentHashMap< String, Integer >();
 
 	// ZooKeeper集群中每台机器状态信息-更新时间
 	public static String timeOfUpdateZooKeeperStatusSet = EMPTY_STRING;
@@ -114,10 +112,10 @@ public class GlobalInstance {
 	}
 
 	/**
-     * 根据ip获取机器状态信息
+     * 根据ip:port获取机器状态信息
      * @param server ip:port
      */
-	public static ZooKeeperStatusV2 getZooKeeperStatusByServer(String server) {
+	public static ZooKeeperStatusV2 getZooKeeperStatus(String server) {
 		return zooKeeperStatusSet.get(server);
 	}
 
@@ -131,34 +129,25 @@ public class GlobalInstance {
 	 * 将机器的自检结果放置到全局变量中去
 	 * @param server ip:port
 	 * @param statusType
-	 *            : 0: CHECKING 1: OK other: ERROR
+	 *            : -1:Initializing 0: CHECKING, 1: OK, 2: ERROR
 	 */
-	public static void putZooKeeperStatusType( String server, int statusType ) {
-		zooKeeperStatusTypeSet.put( server, Integer.valueOf(statusType));
+	public static void putSelfCheckResult(String server, int statusType ) {
+		selfCheckResultSet.put( server, Integer.valueOf(statusType));
 	}
 
 	/**
 	 * 根据ip获取机器自检结果
 	 * @param server ip:port
-	 * @return statusType: 0: CHECKING 1: OK other: ERROR
+	 * @return statusType: -1:Initializing 0: CHECKING, 1: OK, 2: ERROR
 	 * */
-	public static int getZooKeeperStatusTypeByServer(String server) {
+	public static int getSelfCheckResultByServer(String server) {
 		int status = 0;
 		try {
-			status = zooKeeperStatusTypeSet.get(server);
+			return selfCheckResultSet.get(server);
 		} catch ( Exception e ) {
 			return -1;
 		}
-		return status;
 	}
-
-	/** 将所有机器的自检结果 */
-	public static Map< String/** IP */, Integer > getAllZooKeeperStatusType() {
-		return zooKeeperStatusTypeSet;
-	}
-
-	
-	
 	
 	
 	/** 整个ZooKeeper集群的连接情况 zooKeeperClientConnectionMapOfCluster */

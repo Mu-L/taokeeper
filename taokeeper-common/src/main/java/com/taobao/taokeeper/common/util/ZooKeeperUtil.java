@@ -2,10 +2,21 @@ package com.taobao.taokeeper.common.util;
 
 import common.toolkit.util.StringUtil;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ZooKeeperUtil {
+
+    private static final Pattern SESSION_ID_PATTERN_OF_WCHC = Pattern.compile("^0x[0-9a-fA-F]+$");
+    private static final Pattern ZNODE_PATH_PATTERN_OF_WCHC = Pattern.compile("^/[^\r\n\t ]*$");
+
+
 
 
     /**
@@ -46,6 +57,81 @@ public class ZooKeeperUtil {
 
         return new int[]{connections, watchedPaths, watches};
     }
+
+    /**
+     * 从 BufferedReader 流式解析 wchc 命令输出。
+     *
+     * @param reader 已连接的 BufferedReader（本方法不会关闭，需要调用方主动关闭）
+     * @return Map<sessionId, List<path>>
+     * @throws IOException          if I/O error occurs
+     * @throws IllegalArgumentException if format is invalid
+     */
+    public static Map<String, List<String>> parseCommondOfWchc(BufferedReader reader) throws IOException {
+
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        String currentSessionId = null;
+        int lineNumber = 0;
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            lineNumber++;
+
+            // 跳过空行
+            if (line.trim().isEmpty()) {
+                continue;
+            }
+
+            boolean isPathLine = !line.isEmpty() && (line.charAt(0) == ' ' || line.charAt(0) == '\t');
+
+            if ( !isPathLine ) {
+                // 会话 ID 行
+                String sessionId = line.trim();
+                if (!SESSION_ID_PATTERN_OF_WCHC.matcher(sessionId).matches()) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid session ID at line %d: \"%s\"", lineNumber, line)
+                    );
+                }
+                if (result.containsKey(sessionId)) {
+                    throw new IllegalArgumentException(
+                            String.format("Duplicate session ID at line %d: %s", lineNumber, sessionId)
+                    );
+                }
+                currentSessionId = sessionId;
+                result.put(currentSessionId, new ArrayList<>());
+            } else {
+                // 路径行
+                if (currentSessionId == null) {
+                    throw new IllegalArgumentException(
+                            String.format("Path line without preceding session ID at line %d: \"%s\"", lineNumber, line)
+                    );
+                }
+                String path = StringUtil.stripLeading( line );
+                if (!ZNODE_PATH_PATTERN_OF_WCHC.matcher(path).matches()) {
+                    throw new IllegalArgumentException(
+                            String.format("Invalid znode path at line %d: \"%s\"", lineNumber, path)
+                    );
+                }
+                result.get(currentSessionId).add(path);
+            }
+        }
+
+        return result;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     /** 分析stat命令的一行内容, 判断是否为客户端连接

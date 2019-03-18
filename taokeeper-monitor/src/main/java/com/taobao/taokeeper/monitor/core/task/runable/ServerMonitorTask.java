@@ -17,6 +17,9 @@ import common.toolkit.util.StringUtil;
 import common.toolkit.util.collection.MapUtil;
 import common.toolkit.util.io.SSHUtil;
 import common.toolkit.util.io.SocketCommandUtils;
+import org.I0Itec.zkclient.IZkDataListener;
+import org.I0Itec.zkclient.ZkClient;
+import org.apache.zookeeper.CreateMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.context.ContextLoader;
@@ -79,15 +82,15 @@ public class ServerMonitorTask implements Runnable{
 
     @Override
     public void run() {
-        try {
 
             if ( StringUtil.isBlank( ip, port + EMPTY_STRING ) ) {
                 LOG.warn( "IP or port is empty." );
                 return;
             }
+            String server = ip+":"+port;
 
             ZooKeeperStatusV2 zookeeperStatus = new ZooKeeperStatusV2();
-            zookeeperStatus.setServer(ip+":"+port);
+            zookeeperStatus.setServer(server);
 
             try{
                 handleStat( ip, Integer.parseInt( port ), zookeeperStatus );
@@ -103,29 +106,31 @@ public class ServerMonitorTask implements Runnable{
                 LOG.error("Exception when handle ZooKeeper Command[wchs] @"+ip+":"+port,e);
             }
 
+            try{
+                handleWchc( ip, Integer.parseInt( port ), zookeeperStatus );
+                LOG.info("Finish handle ZooKeeper Command[wchc] @"+ip+":"+port);
+            }catch ( Throwable e ){
+                LOG.error("Exception when handle ZooKeeper Command[wchc] @"+ip+":"+port,e);
+            }
+
+            try{
+                GlobalInstance.putSelfCheckResult(server,0);
+                GlobalInstance.putSelfCheckResult( server,handleSelfCheck(ip,Integer.parseInt( port )) );
+                LOG.info("Finish handle ZooKeeper self check @"+server);
+            }catch ( Throwable e ){
+                GlobalInstance.putSelfCheckResult(server,2);
+                LOG.error("Exception when handle ZooKeeper Command[wchc] @"+ip+":"+port,e);
+            }
+
+            GlobalInstance.putZooKeeperStatus( ip+":"+port, zookeeperStatus );
 
             //final Map< String, Connection > consOfServer = GlobalInstance.getZooKeeperClientConnectionMapByClusterIdAndServerIp( ip );
             //zookeeperStatus.setConnections( consOfServer );
 
-
-
-
-
-
-            //sshZooKeeperAndHandleWchc( ip, Integer.parseInt( port ), zooKeeperStatus, zookeeperCluster.getClusterId() );
-            //sshZooKeeperAndHandleRwps( ip, Integer.parseInt( port ), (ZooKeeperStatusV2)zooKeeperStatus, zookeeperCluster.getClusterId() );
             //checkAndAlarm( alarmSettings, zooKeeperStatus, zookeeperCluster.getClusterName() );
-            GlobalInstance.putZooKeeperStatus( ip+":"+port, zookeeperStatus );
-            //Store taokeeper stat to DB
-//            if( needStoreToDB ){
-//                storeTaoKeeperStatToDB( zookeeperCluster.getClusterId(), (ZooKeeperStatusV2)zooKeeperStatus );
-//            }
 
-//            LOG.info( "Finish #" + zookeeperCluster.getClusterName() + "-" + ip );
+            LOG.info( "Finish all monitor item check of " + ip + ":" + port );
 
-        } catch ( Exception e ) {
-            e.printStackTrace();
-        }
     }
 
     /**
@@ -179,8 +184,6 @@ public class ServerMonitorTask implements Runnable{
         }
     }
 
-
-
     /**
      * Exec 4 words command: wchs
      */
@@ -204,206 +207,104 @@ public class ServerMonitorTask implements Runnable{
     }
 
     /**
-     * 进行Telnet连接并进行执行wchc。
-     *
-     * @throws Exception
+     * Exec 4 words command: wchc
      */
-    private void sshZooKeeperAndHandleWchc( String ip, int port, ZooKeeperStatus zooKeeperStatus, int clusterId ) {
+    private void handleWchc(String ip, int port, ZooKeeperStatus zookeeperStatus ) throws IOException {
 
-        Map< String, Connection > connectionMapOfCluster = GlobalInstance.getZooKeeperClientConnectionMapByClusterId( clusterId );
-        if ( null == connectionMapOfCluster )
-            connectionMapOfCluster = new HashMap< String, Connection >();
+        InputStream is = null;
+        BufferedReader reader = null;
+        try{
+            is = SocketCommandUtils.executeSocketCommandAsStream(ip,port,COMMAND_WCHC);
+            reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
 
-        try {
-            if ( StringUtil.isBlank( ip, port + EMPTY_STRING ) ) {
-                LOG.warn( "Ip is empty" );
-                return;
-            }
-            String wchcOutput = SSHUtil.execute( ip, SystemConstant.portOfSSH, userNameOfSSH, passwordOfSSH,
-                    StringUtil.replaceSequenced( COMMAND_WCHC, ip, port + EMPTY_STRING ) );
+            Map<String, List<String>> watchedPathMap= ZooKeeperUtil.parseCommondOfWchc(reader);
 
-            /**
-             * Example: 59 connections watching 161 paths Total watches:405
-             */
-            if ( StringUtil.isBlank( wchcOutput ) ) {
-                LOG.warn( "No output execute " + StringUtil.replaceSequenced( COMMAND_WCHC, ip, port + EMPTY_STRING ) );
-                return;
-            }
+            zookeeperStatus.setWatchedPathMap(watchedPathMap);
+            zookeeperStatus.setWatchedPathMapContent( MapUtil.toString(watchedPathMap));
 
-            StringBuffer wchcOutputWithIp = new StringBuffer();
-            String[] wchcOutputArray = wchcOutput.split( BR );
-            if ( 0 == wchcOutputArray.length ) {
-                LOG.warn( "No output of command " + StringUtil.replaceSequenced( COMMAND_WCHC, ip, port + EMPTY_STRING ) );
-                return;
-            }
-            Map< String, List< String > > watchedPathMap = new HashMap< String, List< String > >();
-            String sessionId = EMPTY_STRING;
-            List< String > watchedPathList = new ArrayList< String >();
-
-            for ( String line : wchcOutputArray ) {
-                if ( StringUtil.isBlank( line ) ) {
-                    wchcOutputWithIp.append( line ).append( BR );
-                    continue;
-                } else if ( line.startsWith( "0x" ) ) {
-                    // 将上次list放入
-                    if ( !StringUtil.isBlank( sessionId ) ) {
-                        watchedPathMap.put( sessionId, watchedPathList );
-                    }
-
-                    sessionId = StringUtil.trimToEmpty( line );
-                    Connection conn = connectionMapOfCluster.get( sessionId );
-                    if ( null != conn )
-                        sessionId += conn.getClientIp();
-                    wchcOutputWithIp.append( sessionId ).append( BR );
-                } else {
-                    watchedPathList.add( StringUtil.trimToEmpty( line ) );
-                    wchcOutputWithIp.append( line ).append( BR );
-                }
-            }// 遍历wchc返回的内容
-            // 将最后一次list放入
-            if ( !StringUtil.isBlank( sessionId ) ) {
-                Connection conn = connectionMapOfCluster.get( sessionId );
-                if ( null != conn )
-                    sessionId += "-" + conn.getClientIp();
-                watchedPathMap.put( sessionId, watchedPathList );
-            }
-            LOG.debug( ip + " 的所有Watch情况是:" + watchedPathMap.keySet() );
-            zooKeeperStatus.setWatchedPathMap( watchedPathMap );
-            zooKeeperStatus.setWatchedPathMapContent( wchcOutputWithIp.toString() );
-        } catch ( SSHException e ) {
-            LOG.warn( "Error when sshZooKeeperAndHandleWchc:[ip:" + ip + ", port:" + port + " ] " + e.getMessage() );
-        } catch ( Exception e ) {
-            LOG.error( "程序错误: " + e.getMessage() );
-            e.printStackTrace();
+        } finally {
+            if(null!=is) is.close();
+            if(null!=reader) reader.close();
         }
     }
 
-
     /**
-     * 进行Telnet连接并进行执行rwps。
-     *
-     * @throws Exception
+     * 执行自检操作，验证与ZooKeeper服务器的连接及基本读写功能
+     * @return 如果所有步骤都成功完成则返回1，否则返回2
      */
-    private void sshZooKeeperAndHandleRwps( String ip, int port, ZooKeeperStatusV2 zooKeeperStatus, int clusterId ) {
+    private int handleSelfCheck(String ip, int port) {
+        final String selfCheckPath = "/taokeeper-selfcheck-"+ip+":"+port+"-"+System.currentTimeMillis();
+        final String[] receivedData = {null};
+        final boolean[] dataChanged = {false};
+        ZkClient zkClient = null;
 
         try {
-            if ( StringUtil.isBlank( ip, port + EMPTY_STRING ) ) {
-                LOG.warn( "Ip is empty" );
-                return;
-            }
-            String rwpsOutput = SSHUtil.execute( ip, SystemConstant.portOfSSH, userNameOfSSH, passwordOfSSH,
-                    StringUtil.replaceSequenced( COMMAND_RWPS, ip, port + EMPTY_STRING ) );
+            // 步骤1: 使用zkclient建立和zookeeper一台服务器的连接
+            zkClient = new ZkClient(ip + ":" + port, 10000);
 
-            /**
-             * RealTime R/W Statistics:
-             * getChildren2:   0.0
-             *
-             * createSession:  0.0
-             *
-             * closeSession:   0.1
-             *
-             * setData:        11.9
-             *
-             * setWatches:     0.0
-             *
-             * getChildren:    27.9
-             *
-             * delete:         0.0
-             *
-             * create:         0.0
-             *
-             * exists:         51.5
-             *
-             * getDate:        2881.1
-             */
-            if ( StringUtil.isBlank( rwpsOutput ) ) {
-                LOG.warn( "No output execute " + StringUtil.replaceSequenced( COMMAND_WCHC, ip, port + EMPTY_STRING ) );
-                return;
+            // 步骤2: 删除一个固定路径的节点（如果存在）
+            if (zkClient.exists(selfCheckPath)) {
+                zkClient.delete(selfCheckPath);
             }
 
-            StringBuffer wchcOutputWithIp = new StringBuffer();
-            String[] wchcOutputArray = rwpsOutput.split( BR );
-            if ( 0 == wchcOutputArray.length ) {
-                LOG.warn( "No output of command " + StringUtil.replaceSequenced( COMMAND_WCHC, ip, port + EMPTY_STRING ) );
-                return;
+            // 步骤3: 检查节点是否存在，预期：不存在
+            if (zkClient.exists(selfCheckPath)) {
+                LOG.warn("Failed to delete node: " + selfCheckPath + " on "+ip+":"+port);
+                return 2;
             }
-            Map< String, List< String > > watchedPathMap = new HashMap< String, List< String > >();
-            String sessionId = EMPTY_STRING;
-            List< String > watchedPathList = new ArrayList< String >();
 
-            double getChildren2 = 0, createSession = 0, closeSession = 0, setData = 0, setWatches = 0, getChildren = 0, delete=0,
-                    create=0,exists=0,getData=0;
+            // 步骤4: 创建节点
+            zkClient.create(selfCheckPath, "", CreateMode.EPHEMERAL);
 
-            ZooKeeperStatusV2.RWStatistics rwps = null;
+            // 步骤5: 检查节点是否存在，预期：存在
+            if (!zkClient.exists(selfCheckPath)) {
+                LOG.warn("Failed to create node: " + selfCheckPath + " on "+ip+":"+port);
+                return 2;
+            }
 
-            for ( String line : wchcOutputArray ) {
-
-                if ( StringUtil.isBlank( line ) ) {
-                    continue;
-                } else if ( line.contains( "getChildren2" ) ) {
-
-                    line = line.substring( line.indexOf( "getChildren2" ) + ( "getChildren2".length() + 1 ) );
-                    getChildren2 = Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                }else if ( line.contains( "createSession" ) ) {
-
-                    line = line.substring( line.indexOf( "createSession" ) + ( "createSession".length() + 1 ) );
-                    createSession = Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                } else if ( line.contains( "closeSession" ) ) {
-
-                    line = line.substring( line.indexOf( "closeSession" ) + ( "closeSession".length() + 1 ) );
-                    closeSession = Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                }else if ( line.contains( "setData" ) ) {
-
-                    line = line.substring( line.indexOf( "setData" ) + ( "setData".length() + 1 ) );
-                    setData = Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                }else if ( line.contains( "setWatches" ) ) {
-
-                    line = line.substring( line.indexOf( "setWatches" ) + ( "setWatches".length() + 1 ) );
-                    setWatches = Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                }else if ( line.contains( "getChildren" ) ) {
-
-                    line = line.substring( line.indexOf( "getChildren" ) + ( "getChildren".length() + 1 ) );
-                    getChildren = Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                }else if ( line.contains( "delete" ) ) {
-
-                    line = line.substring( line.indexOf( "delete" ) + ( "delete".length() + 1 ) );
-                    delete =  Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                }else if ( line.contains( "create" ) ) {
-
-                    line = line.substring( line.indexOf( "create" ) + ( "create".length() + 1 ) );
-                    create = Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                }else if ( line.contains( "exists" ) ) {
-
-                    line = line.substring( line.indexOf( "exists" ) + ( "exists".length() + 1 ) );
-                    exists = Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                }else if ( line.contains( "getDate" ) ) {
-
-                    line = line.substring( line.indexOf( "getDate" ) + ( "getDate".length() + 1 ) );
-                    getData = Math.round( Double.valueOf( StringUtil.trimToEmpty( line ) ) * 100 )/100;
-
-                }else {
-                    continue;
+            // 步骤6: 在节点上创建监听
+            zkClient.subscribeDataChanges(selfCheckPath, new IZkDataListener() {
+                public void handleDataChange(String dataPath, Object data) throws Exception {
+                    receivedData[0] = data.toString();
+                    dataChanged[0] = true;
                 }
-            }// 遍历rwps返回的内容
 
-            rwps = new ZooKeeperStatusV2.RWStatistics( getChildren2, createSession, closeSession, setData, setWatches, getChildren, delete, create, exists, getData );
-            zooKeeperStatus.setRwps( rwps );
+                public void handleDataDeleted(String dataPath) throws Exception {
+                    // ignore
+                }
+            });
 
+            // 步骤7: 在节点写入数据
+            String testData = String.valueOf(System.currentTimeMillis());
+            zkClient.writeData(selfCheckPath, testData);
 
-        } catch ( SSHException e ) {
-            LOG.warn( "Error when sshZooKeeperAndHandleWchc:[ip:" + ip + ", port:" + port + " ] " + e.getMessage() );
-        } catch ( Exception e ) {
-            LOG.error( "程序错误: " + e.getMessage() );
-            e.printStackTrace();
+            // 等待数据变更通知
+            int waitCount = 0;
+            while (!dataChanged[0] && waitCount < 10) { // 最多等待10秒
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+                waitCount++;
+            }
+
+            // 步骤8: 检查收到的通知和数据是否正确
+            if (!dataChanged[0]) {
+                LOG.warn("Did not receive data change notification" + " on "+ip+":"+port);
+                return 2;
+            }
+
+            if (!testData.equals(receivedData[0])) {
+                LOG.warn("Data mismatch. Expected: " + testData + ", but got: " + receivedData[0] + " on "+ip+":"+port);
+                return 2;
+            }
+
+            return 1;
+
+        }finally {
+            // 关闭zkClient连接
+            if (zkClient != null) zkClient.close();
         }
     }
 

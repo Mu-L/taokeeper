@@ -71,12 +71,12 @@ public class ZKServerAliveCheck implements Runnable {
 				// TODO 这里的并发问题要考虑下。
 				// 如果已经有线程在对其进行自检了。
 				String zkIp = ServletUtil.paraseIpAndPortFromServer( server )[0] ;
-				if ( 0 == GlobalInstance.getZooKeeperStatusTypeByServer( zkIp ) ){
+				if ( 0 == GlobalInstance.getSelfCheckResultByServer( zkIp ) ){
 					LOG.info( zkIp + " is checking, no need to check." );
 					continue;
 				}
 				// 如果要检查，标记为正在检查
-				GlobalInstance.putZooKeeperStatusType( zkIp, 0 );
+				GlobalInstance.putSelfCheckResult( server, 0 );
 				LOG.info( zkIp + " not check, start to check now time..." );
 				String ip = server.split( COLON )[0];
 
@@ -91,7 +91,7 @@ public class ZKServerAliveCheck implements Runnable {
 						// 判断一个节点已经挂了：连续两次检测均失败。
 						if ( !sub.checkIfAlive() ) {
 							if ( !sub.checkIfAlive() ) { // 连续两次check失败
-								GlobalInstance.putZooKeeperStatusType( ip, 2 );
+								GlobalInstance.putSelfCheckResult( server, 2 );
 								// 报警
 //								if ( GlobalInstance.needAlarm.get() ) {
 //									ThreadPoolManager.addJobToMessageSendExecutor( new TbMessageSender( new Message( wangwangList, "ZooKeeper所在机器存活性检测失败" + this.zooKeeperCluster.getClusterName(), "Zk node: "
@@ -103,11 +103,11 @@ public class ZKServerAliveCheck implements Runnable {
 								LOG.info( "#-" + this.zooKeeperCluster.getClusterName() + "-" + server + "自检结果ERROR" );
 								continue;
 							}
-							GlobalInstance.putZooKeeperStatusType( ip, 1 );
+							GlobalInstance.putSelfCheckResult( server, 1 );
 							LOG.info( "#-" + this.zooKeeperCluster.getClusterName() + "-" + server + "自检结果OK" );
 							continue;
 						}
-						GlobalInstance.putZooKeeperStatusType( ip, 1 );
+						GlobalInstance.putSelfCheckResult( server, 1 );
 						LOG.info( "#-" + this.zooKeeperCluster.getClusterName() + "-" + server + "自检结果OK" );
 						continue;
 					} catch ( Throwable e ) {
@@ -122,7 +122,7 @@ public class ZKServerAliveCheck implements Runnable {
 //									+ " 存活性检测失败" + e.getMessage(), Message.MessageType.WANGWANG ) ) );
 //
 //						}
-						GlobalInstance.putZooKeeperStatusType( ip, 2 );
+						GlobalInstance.putSelfCheckResult( server, 2 );
 						LOG.info( "Exception when check #-" + this.zooKeeperCluster.getClusterName() + "-" + server + ", Error: " + e.getMessage(), e );
 					} finally {
 						if ( null != sub ) {

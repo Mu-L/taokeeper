@@ -314,6 +314,26 @@ public class StringUtil {
 		return false;
 	}
 
+    /**
+     * 模拟 Java 11+ 的 String.stripLeading() 方法。
+     * 移除字符串开头的所有空白字符（使用 Character.isWhitespace 判断）。
+     *
+     * @param str 输入字符串，可为 null
+     * @return 移除前导空白后的新字符串；若输入为 null，返回 null
+     */
+    public static String stripLeading(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+
+        int i = 0;
+        while (i < str.length() && Character.isWhitespace(str.charAt(i))) {
+            i++;
+        }
+
+        return (i == 0) ? str : str.substring(i);
+    }
+
 	/**
 	 * 字符串连接，使用指定分隔符
 	 * 

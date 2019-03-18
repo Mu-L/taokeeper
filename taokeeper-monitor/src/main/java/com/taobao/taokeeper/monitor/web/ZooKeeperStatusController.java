@@ -55,8 +55,8 @@ public class ZooKeeperStatusController extends BaseController {
             for( String server : serverList ){
                 //String ip = StringUtil.trimToEmpty( server.split( COLON )[0] );
                 //获取自检状态
-                int statusType = GlobalInstance.getZooKeeperStatusTypeByServer( server );
-                ZooKeeperStatusV2 zooKeeperStatus = GlobalInstance.getZooKeeperStatusByServer(server);
+                int statusType = GlobalInstance.getSelfCheckResultByServer( server );
+                ZooKeeperStatusV2 zooKeeperStatus = GlobalInstance.getZooKeeperStatus(server);
                 if( null != zooKeeperStatus ){
                     zooKeeperStatus.setStatusType( statusType );
                 }else{

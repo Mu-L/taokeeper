@@ -19,8 +19,6 @@ import com.taobao.taokeeper.dao.ZooKeeperClusterDAO;
 import com.taobao.taokeeper.model.AlarmSettings;
 import com.taobao.taokeeper.model.Subscriber;
 import com.taobao.taokeeper.model.ZooKeeperCluster;
-import com.taobao.taokeeper.monitor.core.ThreadPoolManager;
-import com.taobao.taokeeper.monitor.core.task.runable.ZKServerAliveCheck;
 import common.toolkit.exception.DaoException;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.ThreadUtil;
@@ -116,20 +114,20 @@ public class ZooKeeperALiveCheckerJob implements Runnable {
 			// 判断一个节点已经挂了：连续两次检测均失败。
 			if ( !sub.checkIfAlive() ) {
 				if ( !sub.checkIfAlive() ) { // 连续两次check失败
-					GlobalInstance.putZooKeeperStatusType( ip, 2 );
+					GlobalInstance.putSelfCheckResult( server, 2 );
 					LOG.info( "对 " + server + "进行节点自检ERROR" );
 					return false;
 				}
-				GlobalInstance.putZooKeeperStatusType( ip, 1 );
+				GlobalInstance.putSelfCheckResult( server, 1 );
 				LOG.info( "对 " + server + "进行节点自检OK" );
 				return true;
 			}
-			GlobalInstance.putZooKeeperStatusType( ip, 1 );
+			GlobalInstance.putSelfCheckResult( server, 1 );
 			LOG.info( "对 " + server + "进行节点自检OK" );
 			return true;
 		} catch ( Throwable e ) {
 			// 报警
-			GlobalInstance.putZooKeeperStatusType( ip, 2 );
+			GlobalInstance.putSelfCheckResult( server, 2 );
 			LOG.info( "对 " + server + "进行节点自检ERROR" );
 		} finally {
 			if ( null != sub )
