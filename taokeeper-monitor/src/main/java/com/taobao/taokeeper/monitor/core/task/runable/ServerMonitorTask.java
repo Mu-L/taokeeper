@@ -229,11 +229,11 @@ public class ServerMonitorTask implements Runnable{
     }
 
     /**
-     * 执行自检操作，验证与ZooKeeper服务器的连接及基本读写功能
+     * 执行自检操作，验证与ZooKeeper服务器的连接及基本读写功能<br/>
      * @return 如果所有步骤都成功完成则返回1，否则返回2
      */
     private int handleSelfCheck(String ip, int port) {
-        final String selfCheckPath = "/taokeeper-selfcheck-"+ip+":"+port+"-"+System.currentTimeMillis();
+        final String selfCheckPath = "/YINSHI.MONITOR.ALIVE.CHECK-"+ip+":"+port+"-"+System.currentTimeMillis();
         final String[] receivedData = {null};
         final boolean[] dataChanged = {false};
         ZkClient zkClient = null;

@@ -29,7 +29,8 @@ import common.toolkit.util.io.ServletUtil;
 @RequestMapping("/report.do")
 public class ReportController extends BaseController {
 
-	
+    这个control的拦截器都改成没有.do的
+
 	private static final Logger LOG = LoggerFactory.getLogger( ReportController.class );
 	
 	/** PAGE 是否开启报警开关 */
