@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.taobao.taokeeper.common.constant.SqlTemplate;
-import com.taobao.taokeeper.dao.ReportDAO;
-import com.taobao.taokeeper.model.TaoKeeperStat;
+import com.taobao.taokeeper.dao.ServerMetricsDAO;
+import com.taobao.taokeeper.model.ServerMetrics;
 import common.toolkit.entity.DateFormat;
 import common.toolkit.entity.db.DBConnectionResource;
 import common.toolkit.exception.DaoException;
@@ -21,42 +21,41 @@ import common.toolkit.util.db.DbcpUtil;
 import org.springframework.stereotype.Repository;
 
 /**
- * Description: Access DB for taokeeper_stat
  * @author yinshi.nc
  * @since 2012-01-05
  */
 @Repository
-public class ReportDAOImpl implements ReportDAO {
+public class ServerMetricsDAOImpl implements ServerMetricsDAO {
 
 	@Override
-	public void addTaoKeeperStat( TaoKeeperStat taoKeeperStat ) throws DaoException {
+	public void insertServerMetrics(ServerMetrics serverMetrics) throws DaoException {
 
-		if ( null == taoKeeperStat ) {
-			return;
+		if ( null == serverMetrics) {
+            throw new DaoException( "Invalid server metrics:null" );
 		}
 		try {
-			String insertSql = StringUtil.replaceSequenced( SqlTemplate.SQL_INSERT_TAOKEEPER_STAT, taoKeeperStat.getClusterId() + "",
-					StringUtil.trimToEmpty( taoKeeperStat.getServer() ),
-					StringUtil.defaultIfBlank( taoKeeperStat.getStatDateTime(), DateUtil.getNowTime( DateFormat.DateTime ) ),
-					StringUtil.defaultIfBlank( taoKeeperStat.getStatDate(), DateUtil.getNowTime( DateFormat.Date ) ), taoKeeperStat.getConnections()
-							+ "", taoKeeperStat.getWatches() + "", taoKeeperStat.getSendTimes() + "", taoKeeperStat.getReceiveTimes() + "",
-					taoKeeperStat.getNodeCount() + "", taoKeeperStat.getRwps() );
+			String insertSql = StringUtil.replaceSequenced( SqlTemplate.SQL_INSERT_SERVER_METRICS, serverMetrics.getClusterId() + "",
+					StringUtil.trimToEmpty( serverMetrics.getServer() ),
+					StringUtil.defaultIfBlank( serverMetrics.getStatDateTime(), DateUtil.getNowTime( DateFormat.DateTime ) ),
+					StringUtil.defaultIfBlank( serverMetrics.getStatDate(), DateUtil.getNowTime( DateFormat.Date ) ), serverMetrics.getConnections()
+							+ "", serverMetrics.getWatches() + "", serverMetrics.getSendTimes() + "", serverMetrics.getReceiveTimes() + "",
+					serverMetrics.getNodeCount() + "", serverMetrics.getRwps() );
 
 			DbcpUtil.executeInsert( insertSql );
-		} catch ( Exception e ) {
-			throw new DaoException( "Error when add taoKeeperStat" + taoKeeperStat + ", Error: " + e.getMessage(), e );
+		} catch ( Throwable e ) {
+			throw new DaoException( "Error when insert into server_metrics, ServerMetrics: " + serverMetrics + ", Error: " + e.getMessage(), e );
 		}
 	}
 
 	@Override
-	public List< TaoKeeperStat > queryTaoKeeperStatByClusterIdAndServerAndStatDate( int clusterId, String server, String statDate )
+	public List<ServerMetrics> queryTaoKeeperStatByClusterIdAndServerAndStatDate(int clusterId, String server, String statDate )
 			throws DaoException {
 
 		if ( 0 == clusterId || StringUtil.isBlank( server ) || StringUtil.isBlank( statDate ) ) {
-			return new ArrayList< TaoKeeperStat >();
+			return new ArrayList<ServerMetrics>();
 		}
 
-		List< TaoKeeperStat > taoKeeperStatList = new ArrayList< TaoKeeperStat >();
+		List<ServerMetrics> taoKeeperStatList = new ArrayList<ServerMetrics>();
 
 		ResultSet rs = null;
 		DBConnectionResource myResultSet = null;
@@ -64,11 +63,11 @@ public class ReportDAOImpl implements ReportDAO {
 			myResultSet = DbcpUtil.executeQuery( StringUtil.replaceSequenced( SqlTemplate.SQL_QUERY_TAOKEEPER_STAT_BY_CLUSTERID_SERVER_DATE,
 					clusterId, server, statDate ) );
 			if ( null == myResultSet ) {
-				return new ArrayList< TaoKeeperStat >();
+				return new ArrayList<ServerMetrics>();
 			}
 			rs = myResultSet.resultSet;
 			if ( null == rs ) {
-				return new ArrayList< TaoKeeperStat >();
+				return new ArrayList<ServerMetrics>();
 			}
 			while ( rs.next() ) {
 
@@ -80,7 +79,7 @@ public class ReportDAOImpl implements ReportDAO {
 				long receiveTimes 	= rs.getLong( "receive_times" );
 				int nodeCount 		= rs.getInt( "node_count" );
 				String rwps         = rs.getString( "rwps" );
-				taoKeeperStatList.add( new TaoKeeperStat( clusterId, server, statDateTime, statDate, connections, watches, sendTimes, receiveTimes,
+				taoKeeperStatList.add( new ServerMetrics( clusterId, server, statDateTime, statDate, connections, watches, sendTimes, receiveTimes,
 						nodeCount, rwps ) );
 			}
 			return taoKeeperStatList;
@@ -97,13 +96,13 @@ public class ReportDAOImpl implements ReportDAO {
 	}
 
 	@Override
-	public Map< String, List< TaoKeeperStat > > queryStatByClusterIdAndStatDate( int clusterId, String statDate ) throws DaoException {
+	public Map< String, List<ServerMetrics> > queryStatByClusterIdAndStatDate(int clusterId, String statDate ) throws DaoException {
 
 		if ( 0 == clusterId || StringUtil.isBlank( statDate ) ) {
 			return CollectionUtil.emptyMap();
 		}
 
-		Map< String, List< TaoKeeperStat > > taoKeeperStatMap = new HashMap< String, List< TaoKeeperStat > >();
+		Map< String, List<ServerMetrics> > taoKeeperStatMap = new HashMap< String, List<ServerMetrics> >();
 
 		ResultSet rs = null;
 		DBConnectionResource myResultSet = null;
@@ -126,7 +125,7 @@ public class ReportDAOImpl implements ReportDAO {
 				int receiveTimes = rs.getInt( "receive_times" );
 				int nodeCount = rs.getInt( "node_count" );
 				String rwps         = rs.getString( "rwps" );
-				this.addStatToTaokeeperStatMap( taoKeeperStatMap, new TaoKeeperStat( clusterId, server, statDateTime, statDate, connections, watches,
+				this.addStatToTaokeeperStatMap( taoKeeperStatMap, new ServerMetrics( clusterId, server, statDateTime, statDate, connections, watches,
 						sendTimes, receiveTimes, nodeCount, rwps ) );
 			}
 
@@ -147,20 +146,20 @@ public class ReportDAOImpl implements ReportDAO {
 	 * Tool: Add taoKeeperStat to Map<String, List< TaoKeeperStat > >
 	 * taoKeeperStatMap
 	 * */
-	private void addStatToTaokeeperStatMap( Map< String, List< TaoKeeperStat > > taoKeeperStatMap, TaoKeeperStat taoKeeperStat ) {
+	private void addStatToTaokeeperStatMap(Map< String, List<ServerMetrics> > taoKeeperStatMap, ServerMetrics taoKeeperStat ) {
 
 		if ( null == taoKeeperStatMap ) {
-			taoKeeperStatMap = new HashMap< String, List< TaoKeeperStat > >();
+			taoKeeperStatMap = new HashMap< String, List<ServerMetrics> >();
 		}
 
 		String server = StringUtil.trimToEmpty( taoKeeperStat.getServer() );
 		if ( StringUtil.isBlank( server ) )
 			return;
 
-		List< TaoKeeperStat > taoKeeperStatList = null;
+		List<ServerMetrics> taoKeeperStatList = null;
 		// The server not in keySet
 		if ( null == ( taoKeeperStatList = taoKeeperStatMap.get( server ) ) ) {
-			taoKeeperStatList = new ArrayList< TaoKeeperStat >();
+			taoKeeperStatList = new ArrayList<ServerMetrics>();
 			taoKeeperStatList.add( taoKeeperStat );
 			taoKeeperStatMap.put( server, taoKeeperStatList );
 		}

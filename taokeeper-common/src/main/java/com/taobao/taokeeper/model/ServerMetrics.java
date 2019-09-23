@@ -2,10 +2,10 @@ package com.taobao.taokeeper.model;
 
 
 /**
- * Description:	Model: TaoKeeper_Stat_DAO
- * @author   yinshi.nc
+ * Model: Metrics of a server
+ * @author   yinshi.nc nileader@gmail.com
  */
-public class TaoKeeperStat {
+public class ServerMetrics {
 
 	private int clusterId;
 	private String server;
@@ -17,11 +17,9 @@ public class TaoKeeperStat {
 	private long receiveTimes;
 	private long nodeCount;
 	private String rwps;
-	
-	
-	
-	public TaoKeeperStat(){}
-	public TaoKeeperStat(int clusterId, String server, String statDateTime, String statDate, int connections, int watches, long sendTimes, long receiveTimes, long nodeCount, String rwps ){
+
+	public ServerMetrics(){}
+	public ServerMetrics(int clusterId, String server, String statDateTime, String statDate, int connections, int watches, long sendTimes, long receiveTimes, long nodeCount, String rwps ){
 		this.clusterId    = clusterId;
 		this.server       = server;
 		this.statDateTime = statDateTime;

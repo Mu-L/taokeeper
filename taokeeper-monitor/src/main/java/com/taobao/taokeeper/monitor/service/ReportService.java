@@ -1,7 +1,7 @@
 package com.taobao.taokeeper.monitor.service;
 
 /**
- * Description: Service of taokeeper_stat
+ * Description: Metric service of ZooKeeper
  * @author   yinshi.nc
  * @since 2012-01-05
  */

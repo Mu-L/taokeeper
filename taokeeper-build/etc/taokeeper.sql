@@ -47,8 +47,8 @@ INSERT INTO `taokeeper_settings` VALUES ('1', 'My TaoKeeper', '5', '我的TaoKee
 -- ----------------------------
 -- Table: taokeeper_stat
 -- ----------------------------
-DROP TABLE IF EXISTS `taokeeper_stat`;
-CREATE TABLE `taokeeper_stat` (
+DROP TABLE IF EXISTS `server_metrics`;
+CREATE TABLE `server_metrics` (
   `cluster_id` int(11) NOT NULL,
   `server` varchar(30) NOT NULL COMMENT '127.0.0.1:2181',
   `stat_date_time` datetime NOT NULL COMMENT '统计时间 2012-01-05 14:56:20',

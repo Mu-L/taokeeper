@@ -43,7 +43,7 @@ public class ZooKeeperStatus {
 		return server;
 	}
 
-	public void setServer(String ip ) {
+	public void setServer(String server ) {
 		this.server = server;
 	}
 

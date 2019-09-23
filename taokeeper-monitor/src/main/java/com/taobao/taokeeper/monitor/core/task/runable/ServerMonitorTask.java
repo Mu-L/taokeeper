@@ -3,25 +3,25 @@ package com.taobao.taokeeper.monitor.core.task.runable;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.taobao.taokeeper.common.GlobalInstance;
-import com.taobao.taokeeper.common.constant.SystemConstant;
 import com.taobao.taokeeper.common.util.ZooKeeperUtil;
-import com.taobao.taokeeper.dao.ReportDAO;
+import com.taobao.taokeeper.dao.ServerMetricsDAO;
 import com.taobao.taokeeper.model.*;
 import common.toolkit.entity.DateFormat;
 import common.toolkit.entity.io.Connection;
 import common.toolkit.exception.DaoException;
-import common.toolkit.exception.SSHException;
 import common.toolkit.util.DateUtil;
 import common.toolkit.util.ObjectUtil;
 import common.toolkit.util.StringUtil;
 import common.toolkit.util.collection.MapUtil;
-import common.toolkit.util.io.SSHUtil;
 import common.toolkit.util.io.SocketCommandUtils;
 import org.I0Itec.zkclient.IZkDataListener;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.zookeeper.CreateMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 import org.springframework.web.context.ContextLoader;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -31,14 +31,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static com.taobao.taokeeper.common.constant.SystemConstant.*;
-import static common.toolkit.constant.BaseConstant.WORD_SEPARATOR;
 import static common.toolkit.constant.EmptyObjectConstant.EMPTY_STRING;
-import static common.toolkit.constant.HtmlTagConstant.BR;
 
 
 /**
@@ -47,7 +44,12 @@ import static common.toolkit.constant.HtmlTagConstant.BR;
  * @author 银时(nileader) yinshi.nc@taobao.com
  * @Date Dec 26, 2019
  */
+@Component
+@Scope("prototype") // 每次 getBean() 都返回新实例
 public class ServerMonitorTask implements Runnable{
+
+    @Autowired
+    protected ServerMetricsDAO serverMetricsDAO;
 
     private static final Logger LOG = LoggerFactory.getLogger( ServerMonitorTask.class );
 
@@ -65,11 +67,16 @@ public class ServerMonitorTask implements Runnable{
 
     private static final String STRING_RECEIVED = "Received:";
 
+    private int clusterId;
     private String ip;
     private String port;
-    private boolean needStoreToDB;
+    private boolean needStoreToDB = true;
 
-    public ServerMonitorTask(String ip, String port) {
+    public ServerMonitorTask() {
+    }
+
+    public ServerMonitorTask(int clusterId, String ip, String port) {
+        this.clusterId = clusterId;
         this.ip = ip;
         this.port = port;
         this.needStoreToDB = true;
@@ -78,6 +85,18 @@ public class ServerMonitorTask implements Runnable{
         this.ip = ip;
         this.port = port;
         this.needStoreToDB = needStoreToDB;
+    }
+
+    public void setClusterId(int clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public void setPort(String port) {
+        this.port = port;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
     }
 
     @Override
@@ -122,7 +141,14 @@ public class ServerMonitorTask implements Runnable{
                 LOG.error("Exception when handle ZooKeeper Command[wchc] @"+ip+":"+port,e);
             }
 
-            GlobalInstance.putZooKeeperStatus( ip+":"+port, zookeeperStatus );
+            //开始将metrics写入数据库中区
+            try {
+                storeServerMetricsToDB(clusterId,zookeeperStatus);
+            } catch (Throwable e) {
+                LOG.error("Error when store Server Metrics to db, error: "+e.getMessage(),e);
+            }
+
+        GlobalInstance.putZooKeeperStatus( ip+":"+port, zookeeperStatus );
 
             //final Map< String, Connection > consOfServer = GlobalInstance.getZooKeeperClientConnectionMapByClusterIdAndServerIp( ip );
             //zookeeperStatus.setConnections( consOfServer );
@@ -308,12 +334,6 @@ public class ServerMonitorTask implements Runnable{
         }
     }
 
-
-
-
-
-
-
     // 检查并进行报警
     private void checkAndAlarm( AlarmSettings alarmSettings, ZooKeeperStatus zooKeeperStatus, String clusterName ) {
 
@@ -366,16 +386,12 @@ public class ServerMonitorTask implements Runnable{
 
 
     /**
-     * store taokeeper stat to DB
+     * Store ServerMetrics To DB
      * TODO 这个方法要异步处理
      * @param clusterId
      * @param zooKeeperStatus
      */
-    private void storeTaoKeeperStatToDB( int clusterId, ZooKeeperStatusV2 zooKeeperStatus ) {
-
-        try {
-            WebApplicationContext wac = ContextLoader.getCurrentWebApplicationContext();
-            ReportDAO reportDAO = ( ReportDAO ) wac.getBean( "reportDAO" );
+    private void storeServerMetricsToDB( int clusterId, ZooKeeperStatusV2 zooKeeperStatus ) throws Exception{
 
             TypeToken< ZooKeeperStatusV2.RWStatistics > type = new TypeToken< ZooKeeperStatusV2.RWStatistics >() {
             };
@@ -385,7 +401,7 @@ public class ServerMonitorTask implements Runnable{
                 rwStatistics = new Gson().toJson( zooKeeperStatus.getRwps(), type.getType() );
             }
 
-            reportDAO.addTaoKeeperStat( new TaoKeeperStat( clusterId,
+            serverMetricsDAO.insertServerMetrics( new ServerMetrics( clusterId,
                     zooKeeperStatus.getServer(),
                     DateUtil.getNowTime( DateFormat.DateTime ),
                     DateUtil.getNowTime( DateFormat.Date ),
@@ -394,16 +410,6 @@ public class ServerMonitorTask implements Runnable{
                     Long.parseLong( zooKeeperStatus.getSent() ),
                     Long.parseLong( zooKeeperStatus.getReceived() ),
                     zooKeeperStatus.getNodeCount(), rwStatistics ) );
-        } catch ( NumberFormatException e ) {
-            LOG.error( "将统计信息记入数据库出错：" + e.getMessage() );
-            e.printStackTrace();
-        } catch ( DaoException e ) {
-            LOG.error( "将统计信息记入数据库出错：" + e.getMessage() );
-            e.printStackTrace();
-        } catch ( Exception e ) {
-            LOG.error( "将统计信息记入数据库出错：" + e.getMessage() );
-            e.printStackTrace();
-        }
     }
 
 

@@ -86,7 +86,13 @@ public class ZooKeeperStatusMonitor implements Runnable {
                             String ip = StringUtil.trimToEmpty( server.split( COLON )[0] );
                             String port = StringUtil.trimToEmpty( server.split( COLON )[1] );
 
-                            threadPoolManager.addTaskToServerMonitorExecutor(new ServerMonitorTask(ip,port));
+
+                            ServerMonitorTask _serverMonitorTask = applicationContext.getBean(ServerMonitorTask.class);
+                            _serverMonitorTask.setClusterId(clusterId);
+                            _serverMonitorTask.setIp(ip);
+                            _serverMonitorTask.setPort(port);
+
+                            threadPoolManager.addTaskToServerMonitorExecutor(_serverMonitorTask);
                         }
                     }
                 }

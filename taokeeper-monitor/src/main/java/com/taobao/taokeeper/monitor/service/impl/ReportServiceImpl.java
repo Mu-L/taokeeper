@@ -7,7 +7,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.taobao.taokeeper.model.TaoKeeperStat;
+import com.taobao.taokeeper.model.ServerMetrics;
 import com.taobao.taokeeper.monitor.service.ReportService;
 import common.toolkit.constant.EmptyObjectConstant;
 import common.toolkit.exception.DaoException;
@@ -34,7 +34,7 @@ public class ReportServiceImpl extends BaseService implements ReportService {
 		if ( StringUtil.isBlank( server ) )
 			return EmptyObjectConstant.EMPTY_STRING;
 
-		List< TaoKeeperStat > taoKeeperStatList;
+		List<ServerMetrics> taoKeeperStatList;
 		try {
 			taoKeeperStatList = reportDAO.queryTaoKeeperStatByClusterIdAndServerAndStatDate( clusterId, server, statDate );
 		} catch ( DaoException e ) {
@@ -42,7 +42,7 @@ public class ReportServiceImpl extends BaseService implements ReportService {
 		}
 
 		StringBuffer contentOfReport = new StringBuffer( "[" );
-		for ( TaoKeeperStat taoKeeperStat : taoKeeperStatList ) {
+		for ( ServerMetrics taoKeeperStat : taoKeeperStatList ) {
 			try {
 				if ( ObjectUtil.isBlank( taoKeeperStat ) )
 					continue;
