@@ -93,5 +93,38 @@ public class ServerMetrics {
 	public void setRwps( String rwps ) {
 		this.rwps = rwps;
 	}
+
+    public String toString4PrometheusMetric() {
+        StringBuilder sb = new StringBuilder();
+
+        // connections: 当前连接数 -> gauge
+        sb.append("# HELP zookeeper_connections Current number of client connections\n");
+        sb.append("# TYPE zookeeper_connections gauge\n");
+        sb.append("zookeeper_connections ").append(connections).append("\n\n");
+
+        // watches: 当前 watches 数量 -> gauge
+        sb.append("# HELP zookeeper_watches Current number of watches\n");
+        sb.append("# TYPE zookeeper_watches gauge\n");
+        sb.append("zookeeper_watches ").append(watches).append("\n\n");
+
+        // sendTimes: 累计发送次数 -> counter
+        sb.append("# HELP zookeeper_packets_sent_total Total number of packets sent\n");
+        sb.append("# TYPE zookeeper_packets_sent_total counter\n");
+        sb.append("zookeeper_packets_sent_total ").append(sendTimes).append("\n\n");
+
+        // receiveTimes: 累计接收次数 -> counter
+        sb.append("# HELP zookeeper_packets_received_total Total number of packets received\n");
+        sb.append("# TYPE zookeeper_packets_received_total counter\n");
+        sb.append("zookeeper_packets_received_total ").append(receiveTimes).append("\n\n");
+
+        // nodeCount: znode 总数 -> gauge
+        sb.append("# HELP zookeeper_znodes Total number of znodes\n");
+        sb.append("# TYPE zookeeper_znodes gauge\n");
+        sb.append("zookeeper_znodes ").append(nodeCount).append("\n\n");
+
+        // 注意：rwps 是字符串，无法转为数值指标，故跳过
+
+        return sb.toString();
+    }
 	
 }

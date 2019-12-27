@@ -1,4 +1,5 @@
 package com.taobao.taokeeper.monitor.web;
+import com.taobao.taokeeper.dao.ServerMetricsDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.taobao.taokeeper.dao.AlarmSettingsDAO;
@@ -20,6 +21,6 @@ public class BaseController {
 	@Autowired
 	protected SettingsDAO taoKeeperSettingsDAO;
 	@Autowired
-	protected ReportService reportService;
+	protected ServerMetricsDAO serverMetricsDAO;
 	
 }

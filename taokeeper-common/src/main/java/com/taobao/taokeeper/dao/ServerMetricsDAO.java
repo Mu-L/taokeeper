@@ -1,4 +1,5 @@
 package com.taobao.taokeeper.dao;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,8 @@ public interface ServerMetricsDAO {
 	 * @throws DaoException
 	 */
 	public Map<String, List<ServerMetrics> > queryStatByClusterIdAndStatDate(int clusterId, String statDate ) throws DaoException;
-	
-	
+
+    public ServerMetrics queryLastedServerMetricsByServer(int clusterId,String server ) throws Exception;
+
+
 }

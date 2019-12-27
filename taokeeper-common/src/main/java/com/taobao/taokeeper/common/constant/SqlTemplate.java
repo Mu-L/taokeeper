@@ -79,7 +79,8 @@ public class SqlTemplate {
 	
 	/** server_metrics */
 	public static final String SQL_INSERT_SERVER_METRICS = "INSERT INTO server_metrics ( cluster_id, server, stat_date_time, stat_date, connections, watches, send_times, receive_times, node_count, rwps ) VALUES ( {0},'{1}', '{2}', '{3}', {4}, {5}, {6}, {7}, {8}, '{9}' )";
-	public static final String SQL_QUERY_TAOKEEPER_STAT_BY_CLUSTERID_SERVER_DATE = "SELECT * FROM taokeeper_stat where cluster_id='{0}' AND server='{1}' AND stat_date='{2}'";
+    public static final String SELECT_LASTED_SERVER_METRICS_BY_CLUSTERID_AND_SERVER = "SELECT * FROM server_metrics where cluster_id='{0}' AND server='{1}' ORDER BY stat_date_time DESC LIMIT 0,1";
+    public static final String SQL_QUERY_TAOKEEPER_STAT_BY_CLUSTERID_SERVER_DATE = "SELECT * FROM taokeeper_stat where cluster_id='{0}' AND server='{1}' AND stat_date='{2}'";
 	public static final String SQL_QUERY_TAOKEEPER_STAT_BY_CLUSTERID_DATE = "SELECT * FROM taokeeper_stat where cluster_id='{0}' AND stat_date='{1}'";
 	
 	

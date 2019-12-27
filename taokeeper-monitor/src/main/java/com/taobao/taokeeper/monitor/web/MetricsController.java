@@ -7,9 +7,12 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.taobao.taokeeper.model.ServerMetrics;
+import common.toolkit.util.number.IntegerUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -20,27 +23,30 @@ import common.toolkit.util.StringUtil;
 import common.toolkit.util.io.ServletUtil;
 
 /**
- * Report
+ * Metrics
  * 
  * @author yinshi.nc@taobao.com
  * @since 2011-08-10
  */
 @Controller
-@RequestMapping("/report.do")
-public class ReportController extends BaseController {
+@RequestMapping("/metrics")
+public class MetricsController extends BaseController {
 
-	private static final Logger LOG = LoggerFactory.getLogger( ReportController.class );
-	
-	/** PAGE 是否开启报警开关 */
-	@RequestMapping(params = "method=reportPAGE")
-	public ModelAndView reportPAGE( HttpServletRequest request, HttpServletResponse response, String clusterId, String server, String statDate ){
+	private static final Logger LOG = LoggerFactory.getLogger( MetricsController.class );
+
+    @PostMapping("/")
+	public ModelAndView reportPAGE( HttpServletRequest request, HttpServletResponse response, int clusterId, String server, String statDate ){
 
 		try {
-			clusterId = StringUtil.defaultIfBlank( clusterId, 1 + EMPTY_STRING );
+			clusterId = IntegerUtil.defaultIfError( clusterId, 1 );
 			statDate  = StringUtil.defaultIfBlank( statDate, DateUtil.getNowTime( DateFormat.Date ) );
 			
-			String contentOfReport = reportService.getReportContentOfServerConnectionByClusterIdAndServerAndStatDate( Integer.parseInt( clusterId ), server, statDate );
-			
+            ServerMetrics serverMetrics = serverMetricsDAO.queryLastedServerMetricsByServer(clusterId,server);
+
+            这里开始要输出了
+
+            ServletUtil.writeToResponse(response,content);
+
 			Map<String, Object> model = new HashMap<String, Object>();
 			model.put( "contentOfReport", contentOfReport );
 			model.put("clusterId", clusterId );

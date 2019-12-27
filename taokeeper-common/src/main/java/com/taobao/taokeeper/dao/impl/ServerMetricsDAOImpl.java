@@ -3,6 +3,7 @@ package com.taobao.taokeeper.dao.impl;
 import static common.toolkit.constant.EmptyObjectConstant.EMPTY_STRING;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -142,7 +143,50 @@ public class ServerMetricsDAOImpl implements ServerMetricsDAO {
 		}
 	}
 
-	/**
+    @Override
+    public ServerMetrics queryLastedServerMetricsByServer(int clusterId, String server) throws Exception {
+
+        if ( 0 == clusterId || StringUtil.isBlank( server ) ) {
+            throw new DaoException( "Invalid clusterId or server" );
+        }
+
+        Map< String, List<ServerMetrics> > taoKeeperStatMap = new HashMap< String, List<ServerMetrics> >();
+
+        ResultSet rs = null;
+        DBConnectionResource myResultSet = null;
+        try {
+            myResultSet = DbcpUtil.executeQuery( StringUtil.replaceSequenced( SqlTemplate.SELECT_LASTED_SERVER_METRICS_BY_CLUSTERID_AND_SERVER, clusterId,
+                    server ) );
+            if ( null == myResultSet ) {
+                return null;
+            }
+            rs = myResultSet.resultSet;
+            if ( null == rs ) {
+                return null;
+            }
+            while ( rs.next() ) {
+                String statDateTime = StringUtil.trimToEmpty( rs.getString( "stat_date_time" ) );
+                String statDate = StringUtil.trimToEmpty( rs.getString( "stat_date" ) );
+                int connections = rs.getInt( "connections" );
+                int watches = rs.getInt( "watches" );
+                int sendTimes = rs.getInt( "send_times" );
+                int receiveTimes = rs.getInt( "receive_times" );
+                int nodeCount = rs.getInt( "node_count" );
+                String rwps         = rs.getString( "rwps" );
+                new ServerMetrics( clusterId, server, statDateTime, statDate, connections, watches,
+                        sendTimes, receiveTimes, nodeCount, rwps );
+            }
+            return null;
+
+        }  finally {
+            if ( null != myResultSet ) {
+                DbcpUtil.closeResultSetAndStatement( rs, myResultSet.statement );
+                DbcpUtil.returnBackConnectionToPool( myResultSet.connection );
+            }
+        }
+    }
+
+    /**
 	 * Tool: Add taoKeeperStat to Map<String, List< TaoKeeperStat > >
 	 * taoKeeperStatMap
 	 * */
